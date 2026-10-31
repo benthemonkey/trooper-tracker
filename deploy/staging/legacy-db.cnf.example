@@ -2,6 +2,6 @@
 # mysqldump. Use a user with only the SELECT privilege on mwg_troop_tracker (DreamHost panel:
 # MySQL Databases -> add user -> untick everything except Select), not the one in cred.php.
 [client]
-host=CHANGE_ME
-user=CHANGE_ME
+host=mysql.midwestgarrison.com
+user=mwg_tt_ro
 password="CHANGE_ME"
