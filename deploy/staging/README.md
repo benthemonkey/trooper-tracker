@@ -8,6 +8,7 @@ plus `XENFORO_READ_ONLY=true`. Mail goes to the log.
 | File | Goes to |
 |---|---|
 | `tt-staging-refresh.sh` | run in place from the clone (cron) |
+| `tt-staging-update.sh` | run in place from the clone, to deploy new code |
 | `env.staging.example` | `~/trooper-tracker/tracker-app/.env` (chmod 600) |
 | `legacy-db.cnf.example` | `~/.tt-legacy-db.cnf` (chmod 600) |
 | `legacy-uploads.htaccess` | `tracker-app/public/images/uploads/.htaccess` |
@@ -51,5 +52,15 @@ Settings are environment variables with Midwest defaults (`TT_PHP`, `TT_LEGACY_D
 7. Run `deploy/staging/tt-staging-refresh.sh` by hand, time it, read the log.
 8. Add the crontab lines.
 
-Update: `git pull`, `composer install --no-dev --optimize-autoloader`, upload a new
-`public/build/` if the front end changed, then run the refresh (it runs the migrations).
+## Update
+
+Build `public/build` somewhere with Node, stamp it with the commit (`git rev-parse HEAD >
+public/build/.commit`), tar it as `build/...`, copy it to the server, then:
+
+    ~/trooper-tracker/deploy/staging/tt-staging-update.sh ~/tt-build.tar.gz [--refresh]
+
+It pulls, runs `composer install`, swaps in the build, migrates the live staging DB, clears caches
+and restarts the queue. It warns if the front end changed since the build it is serving.
+`--refresh` also rebuilds the data now. To roll back: `git checkout <sha>`, then run it with
+`TT_NO_PULL=1` and a build of that commit. Midwest's workspace has `deploy-staging.sh`, which does
+all of it from Windows.
