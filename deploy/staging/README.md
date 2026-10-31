@@ -14,9 +14,9 @@ plus `XENFORO_READ_ONLY=true`. Mail goes to the log.
 
 ## How the rebuild works
 
-Two databases, `mwg_tt_stage_a` and `mwg_tt_stage_b`. `.env` points at the live one. The script:
+Two databases, `mwg_tt_test_a` and `mwg_tt_test_b`. `.env` points at the live one. The script:
 
-1. takes a lock, works out the idle DB, and refuses any name not matching `^mwg_tt_stage_[ab]$`;
+1. takes a lock, works out the idle DB, and refuses any name not matching `^mwg_tt_test_[ab]$`;
 2. clears the config cache and checks artisan resolves the idle DB (it passes `DB_DATABASE` as an
    environment variable, which beats `.env`), then `migrate:fresh` on it;
 3. copies the legacy DB in with `mysqldump --single-transaction` (a consistent read, no locks on
@@ -40,7 +40,7 @@ Settings are environment variables with Midwest defaults (`TT_PHP`, `TT_LEGACY_D
    (before step 3: the panel creates the web directory, and git won't clone into a non-empty one)
 2. `cd ~/trooper-tracker/tracker-app && composer install --no-dev --optimize-autoloader`
 3. DreamHost panel: subdomain with web directory `~/trooper-tracker/tracker-app/public`, PHP 8.4,
-   Let's Encrypt. MySQL: databases `mwg_tt_stage_a` and `mwg_tt_stage_b` with one new user for
+   Let's Encrypt. MySQL: databases `mwg_tt_test_a` and `mwg_tt_test_b` with one new user for
    both, and a Select-only user on `mwg_troop_tracker`.
 4. Upload the prebuilt `public/build/` (built locally; the server needs no Node).
 5. Write `.env` and `~/.tt-legacy-db.cnf` from the examples, then `php artisan key:generate` and
