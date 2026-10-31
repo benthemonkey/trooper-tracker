@@ -29,7 +29,7 @@ Two databases, `mwg_tt_test_a` and `mwg_tt_test_b`. `.env` points at the live on
    uploaded to staging since the last run.
 
 Any failure stops before step 6, so the site keeps serving the previous copy. Output goes to
-`~/logs/tt-staging-refresh.log`; only a failure prints to stderr, so cron mails only then.
+`~/tt-staging-logs/tt-staging-refresh.log`; only a failure prints to stderr, so cron mails only then.
 
 Settings are environment variables with Midwest defaults (`TT_PHP`, `TT_LEGACY_DB`,
 `TT_DB_A`/`TT_DB_B`, `TT_PHP_MEMORY`, `TT_MYSQLDUMP_OPTS`, ...; see the top of the script).

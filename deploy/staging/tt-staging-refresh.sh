@@ -14,7 +14,8 @@ set -Eeuo pipefail
 APP_DIR="${TT_APP_DIR:-$HOME/trooper-tracker/tracker-app}"
 PHP="${TT_PHP:-php}"
 PHP_MEMORY="${TT_PHP_MEMORY:-1024M}"
-LOG_FILE="${TT_LOG_FILE:-$HOME/logs/tt-staging-refresh.log}"
+# Not ~/logs: DreamHost owns that folder (web server logs) and it is read-only
+LOG_FILE="${TT_LOG_FILE:-$HOME/tt-staging-logs/tt-staging-refresh.log}"
 LOCK_FILE="${TT_LOCK_FILE:-$HOME/.tt-staging-refresh.lock}"
 # [client] host/user/password with read access to the legacy DB (see legacy-db.cnf.example)
 LEGACY_CNF="${TT_LEGACY_CNF:-$HOME/.tt-legacy-db.cnf}"
