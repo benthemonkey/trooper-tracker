@@ -39,6 +39,12 @@ class MidwestGarrisonSeeder extends Seeder
         LegacyGarrison::use([
             'name' => 'Midwest Garrison',
             'placeholder_id' => 240,
+            //  TT1.0 moderators who are actual command staff; the rest of the TT1.0 moderators
+            //  run events and import as event coordinators
+            'command_staff_ids' => [
+                2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 19, 40, 71, 86, 88, 117, 118, 124, 125, 170,
+                184, 185, 191, 194, 223, 227,
+            ],
             'squads' => [
                 'Midwest Garrison' => [
                     'legacy_id' => 14,
