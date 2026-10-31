@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace Database\Seeders\FloridaGarrison\Support;
 
 /**
- * Garrison-specific facts the TT1.0 import needs: the region legacy squad 0 maps to, and the
- * legacy squad ids. Defaults to Florida so the existing FloridaGarrisonSeeder is unchanged.
+ * Garrison-specific facts the TT1.0 import needs: the region legacy squad 0 maps to, the
+ * legacy squad ids, and the placeholder trooper. Defaults to Florida so the existing
+ * FloridaGarrisonSeeder is unchanged.
  */
 final class LegacyGarrison
 {
     private static ?array $profile = null;
 
     /**
-     * @param  array{name: string, squads: array<string, array<string, mixed>>}  $profile
+     * @param  array{name: string, placeholder_id?: int|null, squads: array<string, array<string, mixed>>}  $profile
      */
     public static function use(array $profile): void
     {
@@ -23,6 +24,15 @@ final class LegacyGarrison
     public static function name(): string
     {
         return self::profile()['name'];
+    }
+
+    /**
+     * The TT1.0 trooper that stood in for guests (cred.php `placeholder`), whose sign-ups
+     * carry the guest's name in the note. Null when the garrison had none.
+     */
+    public static function placeholderId(): ?int
+    {
+        return self::profile()['placeholder_id'] ?? null;
     }
 
     /**
@@ -44,6 +54,8 @@ final class LegacyGarrison
     {
         return [
             'name' => 'Florida Garrison',
+            //  see Issues\Fix208
+            'placeholder_id' => 1206,
             'squads' => [
                 'Everglades Squad' => [
                     'legacy_id' => 1,

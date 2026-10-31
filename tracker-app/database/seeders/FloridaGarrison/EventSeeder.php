@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Database\Seeders\FloridaGarrison;
 
+use App\Enums\EventGuestStatus;
 use App\Enums\EventStatus;
 use App\Enums\EventTrooperStatus;
 use App\Enums\MembershipRole;
 use App\Models\Event;
+use App\Models\EventGuest;
 use App\Models\EventOrganization;
 use App\Models\EventShift;
 use App\Models\EventTrooper;
@@ -42,6 +44,13 @@ class EventSeeder extends Seeder
     private $handler_ids;
 
     private $organizations;
+
+    private ?int $placeholder_id;
+
+    private ?int $guest_added_by_id;
+
+    /** @var array<int, array<string, true>> guest names used so far, per shift */
+    private array $guest_names = [];
 
     /**
      * Run the database seeds.
@@ -80,6 +89,11 @@ class EventSeeder extends Seeder
         ));
 
         $this->legacy_credit = LegacySignupCreditResolver::load();
+
+        $this->placeholder_id = LegacyGarrison::placeholderId();
+        $this->guest_added_by_id = Trooper::where(Trooper::MEMBERSHIP_ROLE, MembershipRole::ADMINISTRATOR)
+            ->orderBy(Trooper::ID)
+            ->value(Trooper::ID) ?? $this->placeholder_id;
 
         $legacy_costumes = $this->getMappedLegacyCostumes();
 
@@ -215,6 +229,13 @@ class EventSeeder extends Seeder
 
         foreach ($legacy_sign_ups as $legacy_sign_up)
         {
+            if ($this->placeholder_id !== null && (int) $legacy_sign_up->trooperid === $this->placeholder_id)
+            {
+                $this->overlayGuest($legacy_sign_up, $shift_id);
+
+                continue;
+            }
+
             $event_trooper = EventTrooper::where(EventTrooper::EVENT_SHIFT_ID, $shift_id)
                 ->where(EventTrooper::TROOPER_ID, $legacy_sign_up->trooperid)
                 ->first();
@@ -257,6 +278,65 @@ class EventSeeder extends Seeder
                 $event_trooper->save();
             }
         }
+    }
+
+    /**
+     * TT1.0 signed guests up as the placeholder trooper with the guest's name in the note,
+     * several per shift. Import each one as a guest so none collapse into a single sign-up.
+     */
+    private function overlayGuest($legacy_sign_up, int $shift_id): void
+    {
+        $name = $this->uniqueGuestName($shift_id, trim(html_entity_decode((string) $legacy_sign_up->note)));
+
+        $guest = EventGuest::withTrashed()
+            ->where(EventGuest::EVENT_SHIFT_ID, $shift_id)
+            ->where(EventGuest::NAME, $name)
+            ->first() ?? new EventGuest;
+
+        $guest->event_shift_id = $shift_id;
+        $guest->name = $name;
+        $guest->status = $this->mapGuestStatus($this->trooper_status_map[$legacy_sign_up->status]);
+        $guest->signed_up_at = Carbon::parse($legacy_sign_up->signuptime);
+
+        $added_by = (int) $legacy_sign_up->addedby;
+
+        $guest->added_by_trooper_id = isset($this->trooper_ids[$added_by]) && $added_by !== $this->placeholder_id
+            ? $added_by
+            : $this->guest_added_by_id;
+
+        $guest->save();
+    }
+
+    private function uniqueGuestName(int $shift_id, string $name): string
+    {
+        $base = mb_substr($name === '' ? 'Placeholder' : $name, 0, 120);
+        $candidate = $base;
+        $n = 1;
+
+        while (isset($this->guest_names[$shift_id][$candidate]))
+        {
+            $n++;
+            $candidate = "{$base} {$n}";
+        }
+
+        $this->guest_names[$shift_id][$candidate] = true;
+
+        return $candidate;
+    }
+
+    private function mapGuestStatus(EventTrooperStatus $status): EventGuestStatus
+    {
+        //  guests have no attended state; as Issues\Fix208 does, anyone who didn't drop out is going
+        return match ($status)
+        {
+            EventTrooperStatus::TENTATIVE => EventGuestStatus::TENTATIVE,
+            EventTrooperStatus::STAND_BY => EventGuestStatus::STAND_BY,
+            EventTrooperStatus::CANCELLED,
+            EventTrooperStatus::NO_SHOW,
+            EventTrooperStatus::UNABLE_TO_ATTEND,
+            EventTrooperStatus::NOT_PICKED => EventGuestStatus::CANCELLED,
+            default => EventGuestStatus::GOING,
+        };
     }
 
     private function getMappedCostumeId($legacy_id): ?int

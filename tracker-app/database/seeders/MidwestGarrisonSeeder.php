@@ -11,6 +11,7 @@ use Database\Seeders\FloridaGarrison\EventSeeder;
 use Database\Seeders\FloridaGarrison\EventUploadSeeder;
 use Database\Seeders\FloridaGarrison\EventUploadTrooperSeeder;
 use Database\Seeders\FloridaGarrison\OrganizationCostumeSeeder;
+use Database\Seeders\FloridaGarrison\PlaceholderTrooperSeeder;
 use Database\Seeders\FloridaGarrison\Support\LegacyGarrison;
 use Database\Seeders\FloridaGarrison\TrooperAchievementSeeder;
 use Database\Seeders\FloridaGarrison\TrooperCostumeSeeder;
@@ -36,6 +37,7 @@ class MidwestGarrisonSeeder extends Seeder
     {
         LegacyGarrison::use([
             'name' => 'Midwest Garrison',
+            'placeholder_id' => 240,
             'squads' => [
                 'Midwest Garrison' => [
                     'legacy_id' => 14,
@@ -74,6 +76,8 @@ class MidwestGarrisonSeeder extends Seeder
             $this->call(TrooperFriendSeeder::class);
 
             $this->call(TrooperAchievementSeeder::class);
+
+            $this->call(PlaceholderTrooperSeeder::class);
         });
 
         $readable = CarbonInterval::millisecond($ms)->cascade()->forHumans();

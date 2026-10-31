@@ -13,6 +13,7 @@ use Database\Seeders\FloridaGarrison\EventUploadSeeder;
 use Database\Seeders\FloridaGarrison\EventUploadTrooperSeeder;
 use Database\Seeders\FloridaGarrison\OrganizationCostumeSeeder;
 use Database\Seeders\FloridaGarrison\OrganizationSeeder as FloridaGarrisonOrganizationSeeder;
+use Database\Seeders\FloridaGarrison\PlaceholderTrooperSeeder;
 use Database\Seeders\FloridaGarrison\TrooperAchievementSeeder;
 use Database\Seeders\FloridaGarrison\TrooperCostumeSeeder;
 use Database\Seeders\FloridaGarrison\TrooperDonationSeeder;
@@ -61,6 +62,7 @@ class FloridaGarrisonSeeder extends Seeder
 
             $this->call(TrooperAchievementSeeder::class);
 
+            $this->call(PlaceholderTrooperSeeder::class);
         });
 
         $readable = CarbonInterval::millisecond($ms)->cascade()->forHumans();
