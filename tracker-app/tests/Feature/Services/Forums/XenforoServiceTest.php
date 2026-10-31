@@ -13,6 +13,8 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class XenforoServiceTest extends TestCase
@@ -104,6 +106,62 @@ class XenforoServiceTest extends TestCase
                 && ($request['prefix_id'] ?? null) === 3
                 && ($request['custom'] ?? null) === 'value';
         });
+    }
+
+    public static function write_calls(): array
+    {
+        return [
+            'create_post' => [fn (XenforoService $s) => $s->create_post(10, 'Body', 999)],
+            'create_thread' => [fn (XenforoService $s) => $s->create_thread(10, 'Thread', 'Body', 999)],
+            'move_thread' => [fn (XenforoService $s) => $s->move_thread(10, 20)],
+            'update_thread' => [fn (XenforoService $s) => $s->update_thread(10, 'Thread')],
+            'watch_thread' => [fn (XenforoService $s) => $s->watch_thread(10, 999)],
+            'unwatch_thread' => [fn (XenforoService $s) => $s->unwatch_thread(10, 999)],
+            'delete_thread' => [fn (XenforoService $s) => $s->delete_thread(10)],
+            'update_post' => [fn (XenforoService $s) => $s->update_post(10, 'Body', 999)],
+            'update_user' => [fn (XenforoService $s) => $s->update_user(999, ['custom_fields' => ['tkid' => 'TK-1']])],
+        ];
+    }
+
+    #[DataProvider('write_calls')]
+    public function test_read_only_blocks_forum_writes(callable $call): void
+    {
+        config([
+            'services.xenforo.base_url' => 'https://xf.test',
+            'services.xenforo.api_key' => 'key-ro',
+            'services.xenforo.api_user' => '42',
+            'services.xenforo.read_only' => true,
+        ]);
+
+        Http::fake();
+        Log::spy();
+
+        $result = $call(new XenforoService);
+
+        $this->assertSame(['status' => 0, 'body' => null], $result);
+        Http::assertNothingSent();
+        Log::shouldHaveReceived('info')
+            ->withArgs(fn (string $message) => str_starts_with($message, 'XenForo read-only: skipped'))
+            ->once();
+    }
+
+    public function test_read_only_still_allows_reads(): void
+    {
+        config([
+            'services.xenforo.base_url' => 'https://xf.test',
+            'services.xenforo.api_key' => 'key-ro',
+            'services.xenforo.api_user' => '42',
+            'services.xenforo.read_only' => true,
+        ]);
+
+        Http::fake([
+            'https://xf.test/api/users/999' => Http::response(['user' => ['user_id' => 999]], 200),
+        ]);
+
+        $result = (new XenforoService)->get_user(999);
+
+        $this->assertSame(200, $result['status']);
+        Http::assertSentCount(1);
     }
 
     public function test_get_user_groups_returns_payload_for_configured_user(): void

@@ -368,6 +368,12 @@ Configuration reference for all `.env` variables in Troop Tracker.
 - **Common Value**: `1`
 - **When to change**: Set this to the XenForo user account that should act as the API context for thread, post, and user operations
 
+#### XENFORO_READ_ONLY
+- **Purpose**: Block every XenForo API call that would change the forum: creating, updating, moving or deleting threads and posts, thread watches, and user field/group sync. Reads (thread posts, users, groups, smilies, upgrade stats) and OAuth login still work. Each blocked call is logged.
+- **Required**: No
+- **Default**: `false`
+- **When to change**: Set to `true` on a staging or test copy that points at a live forum, so testing never posts threads or rewrites members' profile fields and user groups
+
 #### XENFORO_AUTHORIZE_PATH
 - **Purpose**: Override XenForo OAuth authorize endpoint path
 - **Required**: No

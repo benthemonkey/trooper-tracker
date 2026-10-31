@@ -24,11 +24,32 @@ class XenforoService
 
     private ?string $api_user;
 
+    private bool $read_only;
+
     public function __construct()
     {
         $this->base_url = rtrim((string) config('services.xenforo.base_url', ''), '/');
         $this->api_key = config('services.xenforo.api_key');
         $this->api_user = config('services.xenforo.api_user');
+        $this->read_only = (bool) config('services.xenforo.read_only', false);
+    }
+
+    /**
+     * True (and logged) when XENFORO_READ_ONLY blocks a call that would change the forum.
+     * Callers return the same empty result they use when XenForo is not configured.
+     *
+     * @param  array<string,mixed>  $context
+     */
+    private function refusesWrite(string $action, array $context = []): bool
+    {
+        if (!$this->read_only)
+        {
+            return false;
+        }
+
+        Log::info('XenForo read-only: skipped '.$action, $context);
+
+        return true;
     }
 
     private function buildApiHeaders(?int $user_id = null): array
@@ -382,7 +403,8 @@ class XenforoService
         string $message,
         ?int $user_id = null
     ): array {
-        if (empty($this->base_url) || empty($this->api_key))
+        if (empty($this->base_url) || empty($this->api_key)
+            || $this->refusesWrite('create_post', ['thread_id' => $thread_id]))
         {
             return [
                 'status' => 0,
@@ -429,6 +451,14 @@ class XenforoService
         ?int $prefix_id = null,
         array $extra_fields = []
     ): array {
+        if ($this->refusesWrite('create_thread', ['node_id' => $node_id, 'title' => $title]))
+        {
+            return [
+                'status' => 0,
+                'body' => null,
+            ];
+        }
+
         // If no explicit XenForo user ID was provided, attempt to resolve it
         // from the currently authenticated trooper's linked XenForo account.
         if ($user_id === null)
@@ -467,7 +497,8 @@ class XenforoService
      */
     public function move_thread(int $thread_id, int $target_node_id): array
     {
-        if (empty($this->base_url) || empty($this->api_key) || $thread_id <= 0 || $target_node_id <= 0)
+        if (empty($this->base_url) || empty($this->api_key) || $thread_id <= 0 || $target_node_id <= 0
+            || $this->refusesWrite('move_thread', ['thread_id' => $thread_id, 'target_node_id' => $target_node_id]))
         {
             return [
                 'status' => 0,
@@ -505,7 +536,8 @@ class XenforoService
         int $thread_id,
         string $title
     ): array {
-        if (empty($this->base_url) || empty($this->api_key))
+        if (empty($this->base_url) || empty($this->api_key)
+            || $this->refusesWrite('update_thread', ['thread_id' => $thread_id]))
         {
             return [
                 'status' => 0,
@@ -547,7 +579,8 @@ class XenforoService
      */
     public function watch_thread(int $thread_id, int $user_id): array
     {
-        if (empty($this->base_url) || empty($this->api_key) || $thread_id <= 0 || $user_id <= 0)
+        if (empty($this->base_url) || empty($this->api_key) || $thread_id <= 0 || $user_id <= 0
+            || $this->refusesWrite('watch_thread', ['thread_id' => $thread_id, 'xenforo_user_id' => $user_id]))
         {
             return ['status' => 0, 'body' => null];
         }
@@ -573,7 +606,8 @@ class XenforoService
      */
     public function unwatch_thread(int $thread_id, int $user_id): array
     {
-        if (empty($this->base_url) || empty($this->api_key) || $thread_id <= 0 || $user_id <= 0)
+        if (empty($this->base_url) || empty($this->api_key) || $thread_id <= 0 || $user_id <= 0
+            || $this->refusesWrite('unwatch_thread', ['thread_id' => $thread_id, 'xenforo_user_id' => $user_id]))
         {
             return ['status' => 0, 'body' => null];
         }
@@ -594,7 +628,8 @@ class XenforoService
      */
     public function delete_thread(int $thread_id): array
     {
-        if (empty($this->base_url) || empty($this->api_key) || $thread_id <= 0)
+        if (empty($this->base_url) || empty($this->api_key) || $thread_id <= 0
+            || $this->refusesWrite('delete_thread', ['thread_id' => $thread_id]))
         {
             return [
                 'status' => 0,
@@ -626,7 +661,8 @@ class XenforoService
         string $message,
         ?int $user_id = null
     ): array {
-        if (empty($this->base_url) || empty($this->api_key))
+        if (empty($this->base_url) || empty($this->api_key)
+            || $this->refusesWrite('update_post', ['post_id' => $post_id]))
         {
             return [
                 'status' => 0,
@@ -743,7 +779,8 @@ class XenforoService
      */
     public function update_user(int $user_id, array $payload): array
     {
-        if (empty($this->base_url) || empty($this->api_key) || $user_id <= 0)
+        if (empty($this->base_url) || empty($this->api_key) || $user_id <= 0
+            || $this->refusesWrite('update_user', ['xenforo_user_id' => $user_id]))
         {
             return [
                 'status' => 0,

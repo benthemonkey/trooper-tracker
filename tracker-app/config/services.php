@@ -49,6 +49,8 @@ return [
         'base_url' => rtrim(env('XENFORO_BASE_URL', ''), '/'),
         'api_key' => env('XENFORO_API_KEY'),
         'api_user' => env('XENFORO_API_USER'),
+        // Refuse every API call that would change the forum (threads, posts, watches, users)
+        'read_only' => (bool) env('XENFORO_READ_ONLY', false),
         'name' => env('XENFORO_NAME'),
         'webhook_secret' => env('XENFORO_WEBHOOK_SECRET'),
         // Configurable OAuth paths so different XenForo setups can be supported.
