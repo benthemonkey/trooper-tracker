@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\EventStatus;
+use App\Enums\EventTrooperStatus;
 use App\Enums\EventType;
 use App\Models\Base\Event as BaseEvent;
 use App\Models\Casts\SanitizeHtmlCast;
@@ -119,6 +120,37 @@ class Event extends BaseEvent
         return $this->event_organizations->contains(
             fn($o) => $o->troopers_allowed !== null || $o->handlers_allowed !== null
         );
+    }
+
+    /**
+     * Whether a trooper may still choose "tentative": the event allows it, has no limits, and
+     * starts after the configured cutoff (tracker.tentative_cutoff_days).
+     */
+    public function allowsTentativeSignups(): bool
+    {
+        if (!$this->tentative_signups_allowed || $this->hasLimits())
+        {
+            return false;
+        }
+
+        $cutoff_days = config('tracker.tentative_cutoff_days');
+
+        if ($cutoff_days === null || $cutoff_days === '')
+        {
+            return true;
+        }
+
+        return $this->event_start->isAfter(now()->addDays((int) $cutoff_days));
+    }
+
+    /**
+     * Statuses a trooper may pick for their own sign-up.
+     *
+     * @return array<string, string>
+     */
+    public function signUpStatusOptions(): array
+    {
+        return EventTrooperStatus::toSignUpArray($this->allowsTentativeSignups());
     }
 
     /**

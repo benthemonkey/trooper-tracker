@@ -75,6 +75,22 @@ class SignUpUpdateHtmxController extends MagicBusController
                 return response('Forbidden', 403);
             }
 
+            //  troopers may only pick what the status dropdown offers them; moderators keep
+            //  the wider set they need for manual selection
+            $isOfferedStatus = array_key_exists($requestedStatus->value, $event->signUpStatusOptions())
+                || $requestedStatus === $event_trooper->status;
+
+            if (!$canModerateEvent && !$isOfferedStatus)
+            {
+                return $this->shiftContainerView($event_shift, $authTrooper)
+                    ->header('X-Flash-Message', json_encode([
+                        'message' => 'That status is not available for this event.',
+                        'type' => 'danger',
+                        'focus' => true,
+                        'fadeOut' => 5000,
+                    ]));
+            }
+
             if (
                 $requestedStatus === EventTrooperStatus::GOING
                 && $event_trooper->event_shift_station_id !== null
