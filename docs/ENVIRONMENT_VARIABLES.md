@@ -96,6 +96,13 @@ Configuration reference for all `.env` variables in Troop Tracker.
 - **Values**: A path under `public/` or a full URL
 - **When to change**: Set to your garrison's emblem (shown at 24×24)
 
+### TRACKER_SHOW_ALLOWED_ORGS
+- **Purpose**: Whether event cards list the organizations allowed to attend, until a trooper toggles it (kept per browser in a cookie)
+- **Required**: No
+- **Default**: `true`
+- **Values**: `true`, `false`
+- **When to change**: Set to `false` if most of your events are open to the same organizations
+
 ### TRACKER_CALENDAR_TIMEZONE
 - **Purpose**: Timezone for event dates and scheduling
 - **Required**: Yes

@@ -59,14 +59,16 @@
         @if($show_allowed_orgs)
             <button type="button"
                     class="btn btn-sm btn-outline-secondary w-100"
+                    x-ref="allowedOrgsToggle"
+                    data-default-display="{{ config('tracker.show_allowed_orgs') ? '1' : '0' }}"
                     x-on:click="toggleAllowedOrgs()">
                 <span x-show="!display_allowed_orgs">
-                    Hide Allowed Orgs
-                    <i class="fa fa-fw fa-eye-slash ms-2"></i>
-                </span>
-                <span x-show="display_allowed_orgs">
                     Show Allowed Orgs
                     <i class="fa fa-fw fa-eye ms-2"></i>
+                </span>
+                <span x-show="display_allowed_orgs">
+                    Hide Allowed Orgs
+                    <i class="fa fa-fw fa-eye-slash ms-2"></i>
                 </span>
             </button>
         @endif

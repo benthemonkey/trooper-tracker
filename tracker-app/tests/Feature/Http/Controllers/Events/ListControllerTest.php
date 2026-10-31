@@ -51,6 +51,18 @@ class ListControllerTest extends TestCase
             ->assertDontSee(route('widgets.support-htmx'), false);
     }
 
+    public function test_invoke_passes_the_allowed_orgs_default_to_the_toggle(): void
+    {
+        $trooper = Trooper::factory()->asActive()->withVerifiedEmail()->create();
+
+        $this->actingAs($trooper)->get(route('events.list'))
+            ->assertSee('data-default-display="1"', false);
+
+        config(['tracker.show_allowed_orgs' => false]);
+        $this->actingAs($trooper)->get(route('events.list'))
+            ->assertSee('data-default-display="0"', false);
+    }
+
     public function test_invoke_requires_authentication(): void
     {
         $response = $this->get(route('events.list'));

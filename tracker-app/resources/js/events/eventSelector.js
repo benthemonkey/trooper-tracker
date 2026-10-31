@@ -72,7 +72,8 @@ export default function eventSelector() {
         },
 
         parseAllowedOrgs() {
-            const displayAllowedOrgsValue = getCookie(displayOrgsCookieName) ?? '1';
+            const defaultValue = this.$refs.allowedOrgsToggle?.dataset.defaultDisplay ?? '1';
+            const displayAllowedOrgsValue = getCookie(displayOrgsCookieName) ?? defaultValue;
             return displayAllowedOrgsValue === '1';
         },
 

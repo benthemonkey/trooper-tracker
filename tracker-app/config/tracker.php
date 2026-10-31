@@ -62,6 +62,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Allowed Organizations on Event Cards
+    |--------------------------------------------------------------------------
+    |
+    | Whether event cards list which organizations may attend, until a trooper
+    | toggles it (their choice is kept in a cookie).
+    |
+    */
+
+    'show_allowed_orgs' => (bool) env('TRACKER_SHOW_ALLOWED_ORGS', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | Donor Badge Image
     |--------------------------------------------------------------------------
     |
