@@ -492,6 +492,12 @@ class EventSeeder extends Seeder
 
         $event->status = $legacy->closed ? EventStatus::CLOSED : EventStatus::OPEN;
 
+        //  the event coordinator, so they can keep managing it (Midwest's TT1.0 has createdBy)
+        $created_by = (int) ($legacy->createdBy ?? 0);
+        $event->created_id = isset($this->trooper_ids[$created_by]) && $created_by !== $this->placeholder_id
+            ? $created_by
+            : null;
+
         // Carry legacy forum references when present; otherwise clear to null.
         $event->thread_id = $this->toNullablePositiveInt($legacy->thread_id ?? null);
         $event->post_id = $this->toNullablePositiveInt($legacy->post_id ?? null);

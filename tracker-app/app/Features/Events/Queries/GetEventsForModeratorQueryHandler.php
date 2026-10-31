@@ -50,7 +50,7 @@ readonly class GetEventsForModeratorQueryHandler implements QueryHandlerInterfac
 
         $q = $q->withCount('event_shifts');
 
-        $q = $q->filterWith($message->filter)->moderatedBy($message->moderator);
+        $q = $q->filterWith($message->filter)->managedBy($message->moderator);
 
         $q->orderByDesc(Event::EVENT_END);
 

@@ -8,6 +8,7 @@ use App\Enums\MembershipRole;
 use App\Enums\MembershipStatus;
 use App\Enums\NotificationFrequency;
 use App\Models\Trooper;
+use Database\Seeders\FloridaGarrison\Support\LegacyGarrison;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -66,7 +67,9 @@ class TrooperSeeder extends Seeder
             {
                 0 => MembershipRole::MEMBER,
                 1 => MembershipRole::ADMINISTRATOR,
-                2 => MembershipRole::MODERATOR,
+                2 => LegacyGarrison::isCommandStaff((int) $trooper->id)
+                    ? MembershipRole::MODERATOR
+                    : MembershipRole::EVENT_COORDINATOR,
                 //3 => MembershipRole::Retired,
                 4 => MembershipRole::HANDLER,
                 default => MembershipRole::MEMBER,

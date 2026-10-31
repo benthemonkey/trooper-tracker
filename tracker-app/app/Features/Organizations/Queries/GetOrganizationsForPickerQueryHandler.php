@@ -26,7 +26,8 @@ readonly class GetOrganizationsForPickerQueryHandler implements QueryHandlerInte
      * Handle the query to retrieve organizations for picker components.
      *
      * Query behavior:
-     * 1. If moderated_only is true: Returns organizations moderated by the trooper
+     * 1. If event_host_only (or moderated_only) is true: Returns organizations the trooper
+     *    may host events for (or moderates)
      * 2. If organization_id is set: Returns the specified organization and all descendants
      *    (matched using the organization's node_path for hierarchical filtering)
      * 3. Otherwise: Returns all organizations
@@ -38,7 +39,13 @@ readonly class GetOrganizationsForPickerQueryHandler implements QueryHandlerInte
     {
         $organizations = collect([]);
 
-        if ($message->moderated_only)
+        if ($message->event_host_only)
+        {
+            $organizations = Organization::eventHostableBy($message->trooper)
+                ->orderBy(Organization::SEQUENCE)
+                ->get();
+        }
+        elseif ($message->moderated_only)
         {
             $organizations = Organization::moderatedBy($message->trooper)
                 ->orderBy(Organization::SEQUENCE)

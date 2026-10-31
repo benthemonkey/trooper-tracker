@@ -24,6 +24,11 @@ readonly class GetOrganizationsForPickerQuery
     public readonly bool $moderated_only;
 
     /**
+     * Whether to filter to organizations the trooper may host events for.
+     */
+    public readonly bool $event_host_only;
+
+    /**
      * Optional organization ID to filter by (includes descendants via node_path).
      */
     public readonly ?int $organization_id;
@@ -39,12 +44,14 @@ readonly class GetOrganizationsForPickerQuery
      * @param  Trooper  $trooper  The trooper requesting organizations
      * @param  array  $data  Query parameters:
      *                       - 'moderated_only' (bool): Filter to moderated organizations only (default: false)
+     *                       - 'event_host_only' (bool): Filter to organizations the trooper may host events for (default: false)
      *                       - 'organization_id' (int|null): Filter to specific org and descendants (default: null)
      *                       - 'depth_max' (int|null): Maximum org depth to include (default: null = all depths)
      */
     public function __construct(public readonly Trooper $trooper, array $data)
     {
         $this->moderated_only = boolval($data['moderated_only'] ?? false);
+        $this->event_host_only = boolval($data['event_host_only'] ?? false);
         $this->organization_id = empty($data['organization_id']) ? null : intval($data['organization_id']);
         $this->depth_max = isset($data['depth_max']) && $data['depth_max'] !== null ? intval($data['depth_max']) : null;
     }

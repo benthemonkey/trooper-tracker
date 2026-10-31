@@ -14,11 +14,19 @@ final class LegacyGarrison
     private static ?array $profile = null;
 
     /**
-     * @param  array{name: string, placeholder_id?: int|null, squads: array<string, array<string, mixed>>}  $profile
+     * @param  array{name: string, placeholder_id?: int|null, command_staff_ids?: list<int>|null, squads: array<string, array<string, mixed>>}  $profile
      */
     public static function use(array $profile): void
     {
         self::$profile = $profile;
+    }
+
+    /**
+     * Back to the Florida default.
+     */
+    public static function reset(): void
+    {
+        self::$profile = null;
     }
 
     public static function name(): string
@@ -33,6 +41,19 @@ final class LegacyGarrison
     public static function placeholderId(): ?int
     {
         return self::profile()['placeholder_id'] ?? null;
+    }
+
+    /**
+     * Whether a TT1.0 moderator (permissions 2) imports as a moderator. TT1.0 had no other
+     * way to let someone create events, so a garrison can list its actual command staff
+     * (legacy trooper ids) in `command_staff_ids`; its other moderators import as event
+     * coordinators. Without a list every moderator stays a moderator.
+     */
+    public static function isCommandStaff(int $legacy_trooper_id): bool
+    {
+        $command_staff_ids = self::profile()['command_staff_ids'] ?? null;
+
+        return $command_staff_ids === null || in_array($legacy_trooper_id, $command_staff_ids, true);
     }
 
     /**

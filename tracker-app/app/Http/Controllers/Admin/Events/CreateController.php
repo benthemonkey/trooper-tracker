@@ -116,7 +116,7 @@ class CreateController extends MagicBusController
 
         if ($event->organization_id != null)
         {
-            $q = Organization::moderatedBy($trooper);
+            $q = Organization::eventHostableBy($trooper);
 
             $event->organization = $q->findOrFail($event->organization_id);
         }

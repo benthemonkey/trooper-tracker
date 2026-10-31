@@ -9,6 +9,7 @@ use App\Enums\OrganizationType;
 use App\Models\Base\Organization;
 use App\Models\TrooperAssignment;
 use App\Models\TrooperOrganization;
+use Database\Seeders\FloridaGarrison\Support\LegacyGarrison;
 use Database\Seeders\FloridaGarrison\Traits\HasClubMaps;
 use Database\Seeders\FloridaGarrison\Traits\HasEnumMaps;
 use Database\Seeders\FloridaGarrison\Traits\HasSquadMaps;
@@ -74,7 +75,9 @@ class TrooperOrganizationSeeder extends Seeder
             }
 
             //* 0 = Regular Member, 1 = Super Admin, 2 = Moderator, 3 = RIP Member, 4 = Handler
-            $moderator = $trooper->permissions == 2 && ($trooper->{$column} == 1 || $trooper->{$column} == 2);
+            $moderator = $trooper->permissions == 2
+                && LegacyGarrison::isCommandStaff((int) $trooper->id)
+                && ($trooper->{$column} == 1 || $trooper->{$column} == 2);
             $member = $has_identifier;
             $notify = $trooper->{'esquad' . $legacy_id} == 1;
 
