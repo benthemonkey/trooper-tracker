@@ -23,12 +23,29 @@ use Database\Seeders\FloridaGarrison\Traits\HasEnumMaps;
 use Database\Seeders\FloridaGarrison\Traits\HasSquadMaps;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 
 class EventSeeder extends Seeder
 {
     use HasCostumeMaps;
     use HasEnumMaps;
     use HasSquadMaps;
+
+    /** Every column overlayTroopers() may set, in insert order */
+    private const EVENT_TROOPER_COLUMNS = [
+        EventTrooper::EVENT_SHIFT_ID,
+        EventTrooper::TROOPER_ID,
+        EventTrooper::STATUS,
+        EventTrooper::SIGNED_UP_AT,
+        EventTrooper::IS_HANDLER,
+        EventTrooper::COSTUME_ORGANIZATION_IDS,
+        EventTrooper::COSTUME_ID,
+        EventTrooper::BACKUP_COSTUME_ID,
+        EventTrooper::BACKUP_COSTUME_ORGANIZATION_IDS,
+        EventTrooper::ADDED_BY_TROOPER_ID,
+        EventTrooper::CREATED_AT,
+        EventTrooper::UPDATED_AT,
+    ];
 
     private $costume_maps;
 
@@ -52,6 +69,25 @@ class EventSeeder extends Seeder
     /** @var array<int, array<string, true>> guest names used so far, per shift */
     private array $guest_names = [];
 
+    //  Rows already in the database, so a fresh import skips a lookup per record
+    /** @var array<int, int> */
+    private array $existing_event_ids;
+
+    /** @var array<int, int> */
+    private array $existing_shift_ids;
+
+    /** @var array<string, true> "shift_id:trooper_id" of sign-ups saved or queued */
+    private array $sign_up_keys = [];
+
+    /** @var array<int, list<object>> legacy sign-ups by legacy shift id */
+    private array $legacy_sign_ups;
+
+    /** @var list<array<string, mixed>> */
+    private array $pending_event_organizations = [];
+
+    /** @var list<array<string, mixed>> */
+    private array $pending_event_troopers = [];
+
     /**
      * Run the database seeds.
      */
@@ -63,7 +99,9 @@ class EventSeeder extends Seeder
 
         foreach ($legacy_events as $legacy)
         {
-            $event = Event::find($legacy->id) ?? new Event(['id' => $legacy->id]);
+            $event = isset($this->existing_event_ids[$legacy->id])
+                ? Event::find($legacy->id)
+                : new Event(['id' => $legacy->id]);
 
             $this->overlayEvent($legacy, $event);
 
@@ -75,6 +113,28 @@ class EventSeeder extends Seeder
 
             $this->overlayShifts($legacy, $event);
         }
+
+        $this->flushPending();
+    }
+
+    private function flushPending(): void
+    {
+        foreach (array_chunk($this->pending_event_organizations, 500) as $chunk)
+        {
+            EventOrganization::upsert(
+                $chunk,
+                [EventOrganization::EVENT_ID, EventOrganization::ORGANIZATION_ID],
+                [EventOrganization::CAN_ATTEND, EventOrganization::TROOPERS_ALLOWED]
+            );
+        }
+
+        foreach (array_chunk($this->pending_event_troopers, 500) as $chunk)
+        {
+            EventTrooper::insert($chunk);
+        }
+
+        $this->pending_event_organizations = [];
+        $this->pending_event_troopers = [];
     }
 
     private function initData()
@@ -89,6 +149,24 @@ class EventSeeder extends Seeder
         ));
 
         $this->legacy_credit = LegacySignupCreditResolver::load();
+
+        $this->existing_event_ids = Event::pluck(Event::ID, Event::ID)->all();
+        $this->existing_shift_ids = EventShift::pluck(EventShift::ID, EventShift::ID)->all();
+
+        foreach (EventTrooper::query()->get([EventTrooper::EVENT_SHIFT_ID, EventTrooper::TROOPER_ID]) as $existing)
+        {
+            $this->sign_up_keys["{$existing->event_shift_id}:{$existing->trooper_id}"] = true;
+        }
+
+        //  in id order, which is the order "first record wins" goes by
+        $this->legacy_sign_ups = DB::table('event_sign_up')
+            ->join('tt_troopers', 'event_sign_up.trooperid', '=', 'tt_troopers.id')
+            ->select('event_sign_up.*')
+            ->orderBy('event_sign_up.id')
+            ->get()
+            ->groupBy('troopid')
+            ->map(fn ($group) => $group->all())
+            ->all();
 
         $this->placeholder_id = LegacyGarrison::placeholderId();
         $this->guest_added_by_id = Trooper::where(Trooper::MEMBERSHIP_ROLE, MembershipRole::ADMINISTRATOR)
@@ -143,19 +221,13 @@ class EventSeeder extends Seeder
         {
             $organization = $this->organizations->firstWhere('name', $name);
 
-            $where = [
+            //  upserted in bulk by flushPending()
+            $this->pending_event_organizations[] = [
                 EventOrganization::EVENT_ID => $event->id,
                 EventOrganization::ORGANIZATION_ID => $organization->id,
+                EventOrganization::CAN_ATTEND => $legacy->$column > 0,
+                EventOrganization::TROOPERS_ALLOWED => $legacy->$column >= 500 ? null : $legacy->$column,
             ];
-
-            $set = [
-                EventOrganization::CAN_ATTEND => $column === 'limit501st',
-            ];
-
-            $set[EventOrganization::CAN_ATTEND] = $legacy->$column > 0;
-            $set[EventOrganization::TROOPERS_ALLOWED] = $legacy->$column >= 500 ? null : $legacy->$column;
-
-            EventOrganization::updateOrCreate($where, $set);
         }
     }
 
@@ -181,7 +253,9 @@ class EventSeeder extends Seeder
             }
             else
             {
-                $shift = EventShift::find($legacy_shift->id) ?? new EventShift(['id' => $legacy_shift->id]);
+                $shift = isset($this->existing_shift_ids[$legacy_shift->id])
+                    ? EventShift::find($legacy_shift->id)
+                    : new EventShift(['id' => $legacy_shift->id]);
 
                 $shift->event_id = $event->id;
                 $shift->status = $event->status;
@@ -190,9 +264,9 @@ class EventSeeder extends Seeder
                 $shift->shift_starts_at = $start;
                 $shift->shift_ends_at = $end;
 
-                $shift->save();
-
                 $this->overlayShiftCharity($legacy_shift, $shift);
+
+                $shift->save();
 
                 $shift->key = $key;
 
@@ -212,22 +286,11 @@ class EventSeeder extends Seeder
         $duration = (int) $shift->shift_starts_at->diffInHours($shift->shift_ends_at);
         $shift->charity_hours = $offset === 0 ? null : $duration + $offset;
         $shift->charity_notes = $legacy_shift->charityNote;
-        $shift->save();
     }
 
     private function overlayTroopers($legacy_id, $shift_id)
     {
-        // $troopers = $this->sign_ups->filter(fn($s) => $s->troopid == $legacy_id);
-        // Mission Correction: Fetch signups for THIS specific legacy shift
-        // effectively bypassing the "empty table at start" issue.
-        $legacy_sign_ups = DB::table('event_sign_up')
-            ->join('tt_troopers', 'event_sign_up.trooperid', '=', 'tt_troopers.id')
-            ->join('tt_event_shifts', 'event_sign_up.troopid', '=', 'tt_event_shifts.id')
-            ->where('event_sign_up.troopid', $legacy_id)
-            ->select('event_sign_up.*')
-            ->get();
-
-        foreach ($legacy_sign_ups as $legacy_sign_up)
+        foreach ($this->legacy_sign_ups[$legacy_id] ?? [] as $legacy_sign_up)
         {
             if ($this->placeholder_id !== null && (int) $legacy_sign_up->trooperid === $this->placeholder_id)
             {
@@ -236,13 +299,13 @@ class EventSeeder extends Seeder
                 continue;
             }
 
-            $event_trooper = EventTrooper::where(EventTrooper::EVENT_SHIFT_ID, $shift_id)
-                ->where(EventTrooper::TROOPER_ID, $legacy_sign_up->trooperid)
-                ->first();
+            $sign_up_key = "{$shift_id}:{$legacy_sign_up->trooperid}";
 
-            if ($event_trooper === null)
+            if (!isset($this->sign_up_keys[$sign_up_key]))
             {
                 //  first record wins unforunately
+                $this->sign_up_keys[$sign_up_key] = true;
+
                 $event_trooper = new EventTrooper;
 
                 $event_trooper->event_shift_id = $shift_id;
@@ -275,9 +338,35 @@ class EventSeeder extends Seeder
                     }
                 }
 
-                $event_trooper->save();
+                $this->queueEventTrooper($event_trooper);
             }
         }
+    }
+
+    /**
+     * Queue the sign-up for flushPending()'s bulk insert. The model's attributes are already in
+     * storage form (casts apply on set); a bulk insert needs the same columns on every row.
+     */
+    private function queueEventTrooper(EventTrooper $event_trooper): void
+    {
+        $event_trooper->updateTimestamps();
+
+        $attributes = $event_trooper->getAttributes();
+        $unlisted = array_diff_key($attributes, array_flip(self::EVENT_TROOPER_COLUMNS));
+
+        if ($unlisted !== [])
+        {
+            throw new LogicException('Add to EVENT_TROOPER_COLUMNS: '.implode(', ', array_keys($unlisted)));
+        }
+
+        $row = [];
+
+        foreach (self::EVENT_TROOPER_COLUMNS as $column)
+        {
+            $row[$column] = $attributes[$column] ?? null;
+        }
+
+        $this->pending_event_troopers[] = $row;
     }
 
     /**

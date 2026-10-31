@@ -15,232 +15,197 @@ use App\Models\TrooperAchievement;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Seeder;
 
+/**
+ * Rank, shift count, hours and funds as of today, plus troop-count milestones dated to the end
+ * of the date range (see getDateRanges) in which each one was reached.
+ *
+ * Computed in memory from one read of the attended sign-ups. It used to replay every date
+ * range against the database (about 25 queries per trooper per range), which made it the
+ * slowest step of the import. Results are the same.
+ */
 class TrooperAchievementSeeder extends Seeder
 {
-    private int $rank = 1;
+    private const TROOP_THRESHOLDS = [
+        AchievementType::FIRST_TROOP->value => 1,
+        AchievementType::TROOPED_10->value => 10,
+        AchievementType::TROOPED_25->value => 25,
+        AchievementType::TROOPED_50->value => 50,
+        AchievementType::TROOPED_75->value => 75,
+        AchievementType::TROOPED_100->value => 100,
+        AchievementType::TROOPED_150->value => 150,
+        AchievementType::TROOPED_200->value => 200,
+        AchievementType::TROOPED_250->value => 250,
+        AchievementType::TROOPED_300->value => 300,
+        AchievementType::TROOPED_400->value => 400,
+        AchievementType::TROOPED_500->value => 500,
+        AchievementType::TROOPED_501->value => 501,
+    ];
 
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        $date_ranges = $this->getDateRanges('2000-01-01');
+        $range_ends = array_map(
+            fn (array $range) => Carbon::parse($range[1]),
+            $this->getDateRanges('2000-01-01')
+        );
 
-        foreach ($date_ranges as $date_range)
-        {
-            [$start_date, $end_date] = $date_range;
+        $final_end = end($range_ends);
 
-            $this->rank = 1; // reset rank for each date range
+        $troopers = $this->collectTroopers($final_end);
 
-            $this->command->info("   Processing achievements for date range: {$start_date} to {$end_date}");
+        //  most troops first; ties by id so the rank is repeatable
+        uasort($troopers, fn (array $a, array $b) => [count($b['counted_at']), $a['id']] <=> [count($a['counted_at']), $b['id']]);
 
-            $start_date = Carbon::parse($start_date);
-            $end_date = Carbon::parse($end_date);
+        $today = now()->toDateString();
+        $metrics = [];
+        $milestones = [];
+        $rank = 1;
 
-            $this->runFor($start_date, $end_date);
-        }
-    }
-
-    public function runFor(Carbon $start_date, Carbon $end_date): mixed
-    {
-        $with_count = [
-            'event_troopers as event_count' => function ($q) use ($end_date)
-            {
-                $q->where(EventTrooper::STATUS, EventTrooperStatus::ATTENDED)
-                    ->whereHas('event_shift.event', function ($q) use ($end_date)
-                    {
-                        $q->where(Event::STATUS, EventStatus::CLOSED)
-                            ->where(Event::EVENT_END, '<=', $end_date);
-                    })
-                    ->whereHas('event_shift', function ($q) use ($end_date)
-                    {
-                        $q->where(EventShift::STATUS, EventStatus::CLOSED)
-                            ->where(EventShift::SHIFT_STARTS_AT, '<=', $end_date);
-                    });
-            },
-        ];
-
-        $q = Trooper::query()
-            ->select([Trooper::ID])
-            ->withCount($with_count)
-            ->orderByDesc('event_count');
-
-        $q->chunk(300, function ($troopers) use ($start_date, $end_date)
-        {
-            //  only process rank if we're processing all troopers, otherwise
-            //  the rank won't be accurate since we're not reordering all the
-            //  troopers by attendance
-            $process_rank = true;
-
-            $this->processChunk($troopers, $process_rank, $start_date, $end_date);
-        });
-
-        return null;
-    }
-
-    /**
-     * Process a chunk of troopers to calculate and update their achievements.
-     *
-     * For each trooper, calculates metrics (hours, funds) and updates:
-     * - Rank achievement based on attendance ordering
-     * - Shift count achievement
-     * - Volunteer hours achievement
-     * - Direct and indirect funds achievements
-     * - Troop threshold milestone achievements
-     *
-     * @param  \Illuminate\Support\Collection  $troopers  Chunk of troopers to process
-     */
-    private function processChunk($troopers, bool $process_rank, Carbon $start_date, Carbon $end_date): void
-    {
         foreach ($troopers as $trooper)
         {
-            $metrics = $this->computeMetrics($trooper, $start_date, $end_date);
+            $event_count = count($trooper['counted_at']);
 
-            if ($process_rank)
+            $values = [
+                AchievementType::TROOPER_RANK->value => $rank++,
+                AchievementType::TROOPER_SHIFTS->value => $event_count,
+                AchievementType::VOLUNTEER_HOURS->value => $trooper['total_hours'],
+                AchievementType::DIRECT_FUNDS->value => $trooper['total_direct'],
+                AchievementType::INDIRECT_FUNDS->value => $trooper['total_indirect'],
+            ];
+
+            foreach ($values as $type => $value)
             {
-                //  if we're only processing a single trooper, we don't want to update their rank
-                //  since it won't be accurate (we're not reordering all the troopers by attendance)
-                $this->updateAchievement($trooper, AchievementType::TROOPER_RANK, $this->rank);
+                $metrics[] = [
+                    TrooperAchievement::TROOPER_ID => $trooper['id'],
+                    TrooperAchievement::TYPE => $type,
+                    TrooperAchievement::VALUE => $value,
+                    TrooperAchievement::ACHIEVEMENT_DATE => $today,
+                ];
             }
-            $this->updateAchievement($trooper, AchievementType::TROOPER_SHIFTS, $trooper->event_count);
-            $this->updateAchievement($trooper, AchievementType::VOLUNTEER_HOURS, $metrics['total_hours']);
-            $this->updateAchievement($trooper, AchievementType::DIRECT_FUNDS, $metrics['total_direct']);
-            $this->updateAchievement($trooper, AchievementType::INDIRECT_FUNDS, $metrics['total_indirect']);
 
-            $this->storeTroopThresholdAchievements($trooper, $trooper->event_count, $end_date);
+            foreach (self::TROOP_THRESHOLDS as $type => $threshold)
+            {
+                if ($event_count < $threshold)
+                {
+                    break;
+                }
 
-            $this->rank++;
+                $milestones[] = [
+                    TrooperAchievement::TROOPER_ID => $trooper['id'],
+                    TrooperAchievement::TYPE => $type,
+                    TrooperAchievement::VALUE => true,
+                    TrooperAchievement::ACHIEVEMENT_DATE => $this->firstRangeEnd($range_ends, $trooper['counted_at'][$threshold - 1]),
+                    //  reached in TT1.0, which already celebrated them; without this the daily
+                    //  milestone roundup would notify everyone of their whole history
+                    TrooperAchievement::NOTIFICATION_SENT_AT => now(),
+                    TrooperAchievement::CREATED_AT => now(),
+                    TrooperAchievement::UPDATED_AT => now(),
+                ];
+            }
         }
+
+        foreach (array_chunk($metrics, 500) as $chunk)
+        {
+            TrooperAchievement::upsert(
+                $chunk,
+                [TrooperAchievement::TROOPER_ID, TrooperAchievement::TYPE, TrooperAchievement::ORGANIZATION_COALESCE_ID],
+                [TrooperAchievement::VALUE, TrooperAchievement::ACHIEVEMENT_DATE]
+            );
+        }
+
+        //  like firstOrCreate: a milestone already on record keeps its date
+        foreach (array_chunk($milestones, 500) as $chunk)
+        {
+            TrooperAchievement::insertOrIgnore($chunk);
+        }
+
+        $this->command?->info('   Achievements for '.count($troopers).' troopers, '.count($milestones).' milestones.');
     }
 
     /**
-     * Update or create a trooper's achievement with the given value.
+     * Per trooper: the moment each attended troop starts counting toward their troop count
+     * (sorted), and hours and funds as of $final_end.
      *
-     * Uses updateOrCreate to either update an existing achievement record
-     * or create a new one if it doesn't exist. Sets the achievement_date timestamp
-     * to the current time.
+     * A troop counts at a range end once both its shift has started and its event has ended
+     * by then; hours and funds only need the shift to have started.
      *
-     * @param  Trooper  $trooper  The trooper whose achievement to update
-     * @param  AchievementType  $type  The type of achievement to update
-     * @param  mixed  $value  The achievement value (rank number, shift count, hours, funds, etc.)
+     * @return array<int, array{id: int, counted_at: list<Carbon>, total_hours: int, total_direct: int, total_indirect: int}>
      */
-    private function updateAchievement(Trooper $trooper, AchievementType $type, mixed $value): void
+    private function collectTroopers(Carbon $final_end): array
     {
-        $where = [
-            TrooperAchievement::TROOPER_ID => $trooper->id,
-            TrooperAchievement::TYPE => $type,
-        ];
+        $troopers = [];
 
-        $set = [
-            TrooperAchievement::VALUE => $value,
-            TrooperAchievement::ACHIEVEMENT_DATE => now(),
-        ];
+        foreach (Trooper::query()->pluck(Trooper::ID) as $id)
+        {
+            $troopers[$id] = ['id' => $id, 'counted_at' => [], 'total_hours' => 0, 'total_direct' => 0, 'total_indirect' => 0];
+        }
 
-        TrooperAchievement::updateOrCreate($where, $set);
-    }
-
-    /**
-     * Compute volunteer metrics for a trooper from their attended events.
-     *
-     * Aggregates data from all closed events the trooper has attended:
-     * - Total direct charity funds raised
-     * - Total indirect charity funds raised
-     * - Total volunteer hours (shift duration + event charity hours)
-     *
-     * Only counts events with ATTENDED status and CLOSED event status.
-     *
-     * @param  Trooper  $trooper  The trooper to compute metrics for
-     * @return array{total_direct: int|float, total_indirect: int|float, total_hours: int|float} Computed metrics
-     */
-    private function computeMetrics(Trooper $trooper, Carbon $start_date, Carbon $end_date): array
-    {
-        $event_troopers = $trooper->event_troopers()
+        $event_troopers = EventTrooper::query()
+            ->select([EventTrooper::ID, EventTrooper::TROOPER_ID, EventTrooper::EVENT_SHIFT_ID])
             ->with('event_shift.event')
             ->where(EventTrooper::STATUS, EventTrooperStatus::ATTENDED)
-            ->whereHas('event_shift.event', fn($q) => $q->where(Event::STATUS, EventStatus::CLOSED))
-            ->whereHas('event_shift', function ($q) use ($end_date)
-            {
-                $q->where(EventShift::STATUS, EventStatus::CLOSED)
-                    ->where(EventShift::SHIFT_STARTS_AT, '<=', $end_date);
-            })
+            ->whereHas('event_shift', fn ($q) => $q->where(EventShift::STATUS, EventStatus::CLOSED))
+            ->whereHas('event_shift.event', fn ($q) => $q->where(Event::STATUS, EventStatus::CLOSED))
             ->get();
 
-        $total_direct = 0;
-        $total_indirect = 0;
-        $total_hours = 0;
-
-        foreach ($event_troopers as $et)
+        foreach ($event_troopers as $event_trooper)
         {
-            $shift = $et->event_shift;
-
-            $total_direct += $shift->charity_direct_funds;
-            $total_indirect += $shift->charity_indirect_funds;
-            $total_hours += $shift->effective_charity_hours;
-        }
-
-        return [
-            'total_direct' => $total_direct,
-            'total_indirect' => $total_indirect,
-            'total_hours' => $total_hours,
-        ];
-    }
-
-    /**
-     * Store milestone achievements for troop count thresholds.
-     *
-     * Checks each milestone achievement type (FIRST_TROOP, TROOPED_10, etc.)
-     * and creates achievement records for any milestones the trooper has reached
-     * based on their event count. Only creates new records; existing achievements
-     * are preserved.
-     *
-     * Milestone thresholds: 1, 10, 25, 50, 75, 100, 150, 200, 250, 300, 400, 500, 501
-     *
-     * @param  Trooper  $trooper  The trooper to check milestones for
-     * @param  int  $event_count  The trooper's total attended event count
-     */
-    private function storeTroopThresholdAchievements(Trooper $trooper, int $event_count, Carbon $end_date): void
-    {
-        foreach (AchievementType::cases() as $achievement)
-        {
-            $threshold = match ($achievement)
+            if (!isset($troopers[$event_trooper->trooper_id]))
             {
-                AchievementType::FIRST_TROOP => 1,
-                AchievementType::TROOPED_10 => 10,
-                AchievementType::TROOPED_25 => 25,
-                AchievementType::TROOPED_50 => 50,
-                AchievementType::TROOPED_75 => 75,
-                AchievementType::TROOPED_100 => 100,
-                AchievementType::TROOPED_150 => 150,
-                AchievementType::TROOPED_200 => 200,
-                AchievementType::TROOPED_250 => 250,
-                AchievementType::TROOPED_300 => 300,
-                AchievementType::TROOPED_400 => 400,
-                AchievementType::TROOPED_500 => 500,
-                AchievementType::TROOPED_501 => 501,
-                default => null,
-            };
-
-            if ($threshold === null || $event_count < $threshold)
-            {
-                //  not a troop threshold achievement or
-                //  hasn't reached this threshold yet
                 continue;
             }
 
-            $where = [
-                TrooperAchievement::TROOPER_ID => $trooper->id,
-                TrooperAchievement::TYPE => $achievement,
-            ];
+            $trooper = &$troopers[$event_trooper->trooper_id];
+            $shift = $event_trooper->event_shift;
+            $event_end = $shift->event->event_end;
 
-            $set = [
-                TrooperAchievement::VALUE => true,
-                TrooperAchievement::ACHIEVEMENT_DATE => $end_date,
-            ];
+            if ($shift->shift_starts_at->lte($final_end))
+            {
+                $trooper['total_direct'] += $shift->charity_direct_funds;
+                $trooper['total_indirect'] += $shift->charity_indirect_funds;
+                $trooper['total_hours'] += $shift->effective_charity_hours;
+            }
 
-            TrooperAchievement::firstOrCreate($where, $set);
+            if ($event_end !== null)
+            {
+                $counted_at = $shift->shift_starts_at->max($event_end);
+
+                if ($counted_at->lte($final_end))
+                {
+                    $trooper['counted_at'][] = $counted_at;
+                }
+            }
+
+            unset($trooper);
         }
+
+        foreach ($troopers as &$trooper)
+        {
+            usort($trooper['counted_at'], fn (Carbon $a, Carbon $b) => $a <=> $b);
+        }
+
+        unset($trooper);
+
+        return $troopers;
     }
 
+    /**
+     * @param  list<Carbon>  $range_ends
+     */
+    private function firstRangeEnd(array $range_ends, Carbon $moment): string
+    {
+        foreach ($range_ends as $range_end)
+        {
+            if ($moment->lte($range_end))
+            {
+                return $range_end->toDateString();
+            }
+        }
+
+        return end($range_ends)->toDateString();
+    }
 
     private function getDateRanges(string $start_date_string): array
     {

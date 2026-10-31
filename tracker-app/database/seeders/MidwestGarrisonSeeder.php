@@ -24,6 +24,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Benchmark;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Imports a Midwest Garrison TT1.0 database, reusing the Florida import seeders with the
@@ -54,7 +55,9 @@ class MidwestGarrisonSeeder extends Seeder
             ],
         ]);
 
-        $ms = Benchmark::measure(function ()
+        //  one transaction: tens of thousands of single-row writes otherwise each pay for a
+        //  commit, and a failed import leaves nothing half-written
+        $ms = Benchmark::measure(fn () => DB::transaction(function ()
         {
             $this->call(CostumeSeeder::class);
             $this->call(OrganizationSeeder::class);
@@ -78,10 +81,14 @@ class MidwestGarrisonSeeder extends Seeder
             $this->call(TrooperAchievementSeeder::class);
 
             $this->call(PlaceholderTrooperSeeder::class);
-        });
+        }));
 
         $readable = CarbonInterval::millisecond($ms)->cascade()->forHumans();
 
         $this->command->info("Midwest Garrison seeding completed in {$readable}.");
+
+        //  the club-scoped and donation milestones the import doesn't compute. Created as already
+        //  notified; the daily 02:00 run would otherwise queue a notification for each one.
+        Artisan::call('tracker:calculate-trooper-achievements', ['--without-notifications' => true]);
     }
 }
