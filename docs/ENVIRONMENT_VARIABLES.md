@@ -82,11 +82,19 @@ Configuration reference for all `.env` variables in Troop Tracker.
 - **Default**: None
 - **Example**: `300`
 - **When to change**: Set to your organization's funding target
+- **Note**: Leave empty (or `0`) to hide the support widget
 
 ### TRACKER_SUPPORT_URL
 - **Purpose**: Link to donation/support page
 - **Required**: No
 - **Example**: `https://your-forum.com/account/upgrades`
+
+### TRACKER_NAVBAR_ICON
+- **Purpose**: Garrison emblem shown at the top left of every page
+- **Required**: No
+- **Default**: `img/icons/troop-tracker-32x32.png`
+- **Values**: A path under `public/` or a full URL
+- **When to change**: Set to your garrison's emblem (shown at 24×24)
 
 ### TRACKER_CALENDAR_TIMEZONE
 - **Purpose**: Timezone for event dates and scheduling

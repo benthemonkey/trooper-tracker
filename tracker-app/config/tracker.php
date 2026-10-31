@@ -50,6 +50,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Navbar Icon
+    |--------------------------------------------------------------------------
+    |
+    | The garrison emblem shown at the top left of every page: a path under
+    | public/ or a full URL. Set TRACKER_NAVBAR_ICON to use your own.
+    |
+    */
+
+    'navbar_icon' => env('TRACKER_NAVBAR_ICON', 'img/icons/troop-tracker-32x32.png'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Donor Badge Image
     |--------------------------------------------------------------------------
     |
