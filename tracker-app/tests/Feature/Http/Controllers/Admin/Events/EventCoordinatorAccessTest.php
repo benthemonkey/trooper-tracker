@@ -84,6 +84,31 @@ class EventCoordinatorAccessTest extends TestCase
             ->assertDontSee('Other Region');
     }
 
+    public function test_only_current_memberships_count_for_hosting(): void
+    {
+        //  notify-only on the other region doesn't make them a member of it
+        TrooperAssignment::factory()
+            ->forTrooper($this->coordinator)
+            ->forOrganization($this->other_region)
+            ->withShouldNotify()
+            ->create();
+
+        $hostable = Organization::eventHostableBy($this->coordinator)->pluck(Organization::NAME)->all();
+
+        $this->assertEqualsCanonicalizing(['Club', 'Home Region'], $hostable);
+
+        //  nor does a membership that has ended
+        $former_member = Trooper::factory()->asEventCoordinator()->create();
+        TrooperAssignment::factory()
+            ->forTrooper($former_member)
+            ->forOrganization($this->unit)
+            ->asMember()
+            ->create()
+            ->delete();
+
+        $this->assertSame(0, Organization::eventHostableBy($former_member)->count());
+    }
+
     public function test_coordinator_creates_an_event_they_then_own(): void
     {
         Queue::fake([SendEventCreatedNotificationsJob::class]);
@@ -127,6 +152,60 @@ class EventCoordinatorAccessTest extends TestCase
         $this->actingAs($this->coordinator)->get(route('admin.events.troopers', ['event' => $own]))->assertOk();
         $this->actingAs($this->coordinator)->get(route('admin.events.update', ['event' => $others]))->assertForbidden();
         $this->actingAs($this->coordinator)->get(route('admin.events.troopers', ['event' => $others]))->assertForbidden();
+    }
+
+    public function test_coordinator_cannot_move_their_event_to_another_organization(): void
+    {
+        $own = Event::factory()->withOrganization($this->region)->withCreatedByTrooper($this->coordinator)->create();
+
+        $this->actingAs($this->coordinator)
+            ->post(route('admin.events.update', ['event' => $own]), $this->eventPayload($this->other_region))
+            ->assertSessionHasErrors(Event::ORGANIZATION_ID);
+
+        $this->assertSame($this->region->id, $own->fresh()->organization_id);
+    }
+
+    public function test_a_copied_event_belongs_to_the_coordinator(): void
+    {
+        $source = Event::factory()->withOrganization($this->region)->create();
+
+        $this->actingAs($this->coordinator)
+            ->post(route('admin.events.copy', ['event' => $source]), [
+                'name' => 'Copied By Coordinator',
+                'event_start' => now()->addDays(7)->toDateString(),
+            ])
+            ->assertRedirect();
+
+        $copy = Event::where(Event::NAME, 'Copied By Coordinator')->sole();
+
+        $this->assertSame($this->coordinator->id, $copy->created_id);
+        $this->assertSame($this->region->id, $copy->organization_id);
+
+        $this->actingAs($this->coordinator)
+            ->get(route('admin.events.update', ['event' => $copy]))
+            ->assertOk();
+    }
+
+    public function test_event_page_offers_edit_and_copy_by_permission(): void
+    {
+        $own = Event::factory()->withOrganization($this->region)->withCreatedByTrooper($this->coordinator)->create();
+        $same_region = Event::factory()->withOrganization($this->region)->create();
+        $other_region = Event::factory()->withOrganization($this->other_region)->create();
+
+        $this->actingAs($this->coordinator)->get(route('events.display', ['event' => $own]))
+            ->assertOk()
+            ->assertSee(route('admin.events.update', ['event' => $own]), false)
+            ->assertSee(route('admin.events.copy', ['event' => $own]), false);
+
+        $this->actingAs($this->coordinator)->get(route('events.display', ['event' => $same_region]))
+            ->assertOk()
+            ->assertDontSee(route('admin.events.update', ['event' => $same_region]), false)
+            ->assertSee(route('admin.events.copy', ['event' => $same_region]), false);
+
+        $this->actingAs($this->coordinator)->get(route('events.display', ['event' => $other_region]))
+            ->assertOk()
+            ->assertDontSee(route('admin.events.update', ['event' => $other_region]), false)
+            ->assertDontSee(route('admin.events.copy', ['event' => $other_region]), false);
     }
 
     public function test_coordinator_copies_events_of_organizations_they_belong_to(): void

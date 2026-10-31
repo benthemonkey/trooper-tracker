@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Database\Seeders\FloridaGarrison;
 
+use App\Enums\MembershipRole;
 use App\Models\Event;
 use App\Models\Organization;
 use App\Models\Trooper;
@@ -12,6 +13,7 @@ use Carbon\Carbon;
 use Database\Seeders\FloridaGarrison\EventSeeder;
 use Database\Seeders\FloridaGarrison\Support\LegacyGarrison;
 use Database\Seeders\FloridaGarrison\TrooperOrganizationSeeder;
+use Database\Seeders\FloridaGarrison\TrooperSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -77,6 +79,43 @@ class LegacyEventCoordinatorImportTest extends TestCase
 
         $this->assertTrue($this->moderatesGarrison($staff));
         $this->assertFalse($this->moderatesGarrison($coordinator));
+    }
+
+    public function test_trooper_seeder_imports_moderators_off_the_list_as_event_coordinators(): void
+    {
+        Schema::table('troopers', function (Blueprint $table): void
+        {
+            foreach (['legal_name', 'phone', 'email', 'password', 'last_active', 'datecreated'] as $column)
+            {
+                $table->string($column)->nullable();
+            }
+
+            foreach (['efast', 'econfirm', 'ecommandnotify', 'approved'] as $column)
+            {
+                $table->integer($column)->default(0);
+            }
+        });
+
+        foreach ([101 => 1, 102 => 2, 103 => 2, 104 => 0] as $id => $permissions)
+        {
+            DB::table('troopers')->insert([
+                'id' => $id,
+                'name' => "Legacy {$id}",
+                'permissions' => $permissions,
+                'approved' => 1,
+                'forum_id' => '',
+            ]);
+        }
+
+        $this->useProfileWithCommandStaff([102]);
+
+        //  db:seed unguards models, which is what lets the import keep legacy ids
+        Model::unguarded(fn () => (new TrooperSeeder)->run());
+
+        $this->assertSame(MembershipRole::ADMINISTRATOR, Trooper::findOrFail(101)->membership_role);
+        $this->assertSame(MembershipRole::MODERATOR, Trooper::findOrFail(102)->membership_role);
+        $this->assertSame(MembershipRole::EVENT_COORDINATOR, Trooper::findOrFail(103)->membership_role);
+        $this->assertSame(MembershipRole::MEMBER, Trooper::findOrFail(104)->membership_role);
     }
 
     public function test_event_seeder_keeps_the_legacy_event_creator(): void
