@@ -14,6 +14,7 @@ use App\Models\EventTrooper;
 use App\Models\Organization;
 use App\Models\Trooper;
 use Carbon\Carbon;
+use Database\Seeders\FloridaGarrison\Support\LegacyGarrison;
 use Database\Seeders\FloridaGarrison\Support\LegacySignupCreditResolver;
 use Database\Seeders\FloridaGarrison\Traits\HasCostumeMaps;
 use Database\Seeders\FloridaGarrison\Traits\HasEnumMaps;
@@ -304,7 +305,7 @@ class EventSeeder extends Seeder
         $event->parking_available = $legacy->parking ?? false;
         $event->accessible = $legacy->mobility ?? false;
         $event->amenities = $legacy->amenities;
-        $event->comments = $this->toMarkdown($legacy->comments);
+        $event->comments = $this->toMarkdown($legacy->comments ?? '');
         $event->referred_by = $legacy->referred;
 
         if ($legacy->limitedEvent)
@@ -345,7 +346,7 @@ class EventSeeder extends Seeder
 
         if ($id <= 0)
         {
-            return $organizations->filter(fn ($org) => $org->name === 'Florida Garrison')->first();
+            return $organizations->filter(fn ($org) => $org->name === LegacyGarrison::name())->first();
         }
 
         return $organizations[$id];

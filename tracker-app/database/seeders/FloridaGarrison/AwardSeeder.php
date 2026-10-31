@@ -9,6 +9,7 @@ use App\Models\Award;
 use App\Models\AwardTrooper;
 use App\Models\Organization;
 use Carbon\Carbon;
+use Database\Seeders\FloridaGarrison\Support\LegacyGarrison;
 use Exception;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -307,7 +308,7 @@ class AwardSeeder extends Seeder
         }
         else
         {
-            $award->organization_id = $this->getOrganization('Florida Garrison')->id;
+            $award->organization_id = $this->getOrganization(LegacyGarrison::name())->id;
         }
     }
 

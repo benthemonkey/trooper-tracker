@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders\FloridaGarrison;
 
 use App\Enums\MembershipStatus;
+use App\Enums\OrganizationType;
 use App\Models\Base\Organization;
 use App\Models\TrooperAssignment;
 use App\Models\TrooperOrganization;
@@ -115,8 +116,12 @@ class TrooperOrganizationSeeder extends Seeder
 
             $unit = $this->getOrganization($squad['id']);
 
+            //  a legacy squad can map to the region itself (Midwest's main squad is the garrison)
+            $is_region = $unit->type === OrganizationType::REGION->value;
+            $region_id = $is_region ? $unit->id : $unit->parent_id;
+
             $region_assignment = TrooperAssignment::query()
-                ->where(TrooperAssignment::ORGANIZATION_ID, $unit->parent_id)
+                ->where(TrooperAssignment::ORGANIZATION_ID, $region_id)
                 ->where(TrooperAssignment::TROOPER_ID, $trooper->id)
                 ->first();
 
