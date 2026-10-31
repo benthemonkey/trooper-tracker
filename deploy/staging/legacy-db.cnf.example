@@ -1,0 +1,7 @@
+# Copy to ~/.tt-legacy-db.cnf and chmod 600. Read access to the live legacy tracker DB for
+# mysqldump. Use a user with only the SELECT privilege on mwg_troop_tracker (DreamHost panel:
+# MySQL Databases -> add user -> untick everything except Select), not the one in cred.php.
+[client]
+host=CHANGE_ME
+user=CHANGE_ME
+password="CHANGE_ME"

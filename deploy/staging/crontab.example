@@ -1,0 +1,12 @@
+# Staging crontab lines (crontab -e). Adjust the PHP path to what `ls -d /usr/local/php8*` shows.
+# Cron mails MAILTO whenever a job prints anything; the refresh prints only on failure.
+MAILTO=CHANGE_ME
+TT=/home/CHANGE_ME/trooper-tracker
+PHP=/usr/local/php84/bin/php
+
+# Nightly rebuild from the live legacy DB (server time; check `date`)
+0 4 * * * TT_PHP=$PHP $TT/deploy/staging/tt-staging-refresh.sh
+
+# Laravel scheduler, and the queue (no supervisor on shared hosting)
+* * * * * cd $TT/tracker-app && $PHP artisan schedule:run >> /dev/null 2>&1
+* * * * * cd $TT/tracker-app && $PHP artisan queue:work --stop-when-empty --max-time=55 >> /dev/null 2>&1

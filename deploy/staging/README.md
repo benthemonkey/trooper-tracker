@@ -1,0 +1,54 @@
+# Midwest Garrison staging
+
+A copy of trooper-tracker on the Midwest DreamHost account, filled with real data from the live
+legacy (TT1.0) tracker and rebuilt from it every night. Changes made on staging don't survive the
+next rebuild. It can read the live forum (OAuth login) but never writes to it: no XenForo API key,
+plus `XENFORO_READ_ONLY=true`. Mail goes to the log.
+
+| File | Goes to |
+|---|---|
+| `tt-staging-refresh.sh` | run in place from the clone (cron) |
+| `env.staging.example` | `~/trooper-tracker/tracker-app/.env` (chmod 600) |
+| `legacy-db.cnf.example` | `~/.tt-legacy-db.cnf` (chmod 600) |
+| `crontab.example` | `crontab -e` |
+
+## How the rebuild works
+
+Two databases, `mwg_tt_stage_a` and `mwg_tt_stage_b`. `.env` points at the live one. The script:
+
+1. takes a lock, works out the idle DB, and refuses any name not matching `^mwg_tt_stage_[ab]$`;
+2. clears the config cache and checks artisan resolves the idle DB (it passes `DB_DATABASE` as an
+   environment variable, which beats `.env`), then `migrate:fresh` on it;
+3. copies the legacy DB in with `mysqldump --single-transaction` (a consistent read, no locks on
+   the live site);
+4. runs `MidwestGarrisonSeeder`;
+5. checks troopers, events, sign-ups and guests against the legacy tables, then drops the legacy
+   tables from the staging DB;
+6. points `.env` at the rebuilt DB, clears the cache, restarts the queue, and deletes files
+   uploaded to staging since the last run.
+
+Any failure stops before step 6, so the site keeps serving the previous copy. Output goes to
+`~/logs/tt-staging-refresh.log`; only a failure prints to stderr, so cron mails only then.
+
+Settings are environment variables with Midwest defaults (`TT_PHP`, `TT_LEGACY_DB`,
+`TT_DB_A`/`TT_DB_B`, `TT_PHP_MEMORY`, `TT_MYSQLDUMP_OPTS`, ...; see the top of the script).
+`TT_KEEP_LEGACY=1` keeps the legacy tables for debugging. Don't run `config:cache` on staging.
+
+## Install
+
+1. `git clone -b mwg/staging https://github.com/benthemonkey/trooper-tracker.git ~/trooper-tracker`
+   (before step 3: the panel creates the web directory, and git won't clone into a non-empty one)
+2. `cd ~/trooper-tracker/tracker-app && composer install --no-dev --optimize-autoloader`
+3. DreamHost panel: subdomain with web directory `~/trooper-tracker/tracker-app/public`, PHP 8.4,
+   Let's Encrypt. MySQL: databases `mwg_tt_stage_a` and `mwg_tt_stage_b` with one new user for
+   both, and a Select-only user on `mwg_troop_tracker`.
+4. Upload the prebuilt `public/build/` (built locally; the server needs no Node).
+5. Write `.env` and `~/.tt-legacy-db.cnf` from the examples, then `php artisan key:generate` and
+   `php artisan storage:link`.
+6. Legacy photos: `ln -s ~/midwestgarrison.com/tracker/images/uploads public/images/uploads`
+   (staging never deletes from it; its own uploads go to `storage/app/public`).
+7. Run `deploy/staging/tt-staging-refresh.sh` by hand, time it, read the log.
+8. Add the crontab lines.
+
+Update: `git pull`, `composer install --no-dev --optimize-autoloader`, upload a new
+`public/build/` if the front end changed, then run the refresh (it runs the migrations).
