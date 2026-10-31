@@ -1,0 +1,8 @@
+# Copy to tracker-app/public/images/uploads/.htaccess. Legacy (TT1.0) photos stay on the live
+# site; anything not in this folder is redirected there. Staging's own uploads go to
+# storage/app/public, not here. (The folder is tracked upstream, so it can't be a symlink.)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(.*)$ https://midwestgarrison.com/tracker/images/uploads/$1 [R=302,L]
+</IfModule>

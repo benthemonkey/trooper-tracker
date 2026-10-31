@@ -10,6 +10,7 @@ plus `XENFORO_READ_ONLY=true`. Mail goes to the log.
 | `tt-staging-refresh.sh` | run in place from the clone (cron) |
 | `env.staging.example` | `~/trooper-tracker/tracker-app/.env` (chmod 600) |
 | `legacy-db.cnf.example` | `~/.tt-legacy-db.cnf` (chmod 600) |
+| `legacy-uploads.htaccess` | `tracker-app/public/images/uploads/.htaccess` |
 | `crontab.example` | `crontab -e` |
 
 ## How the rebuild works
@@ -45,8 +46,8 @@ Settings are environment variables with Midwest defaults (`TT_PHP`, `TT_LEGACY_D
 4. Upload the prebuilt `public/build/` (built locally; the server needs no Node).
 5. Write `.env` and `~/.tt-legacy-db.cnf` from the examples, then `php artisan key:generate` and
    `php artisan storage:link`.
-6. Legacy photos: `ln -s ~/midwestgarrison.com/tracker/images/uploads public/images/uploads`
-   (staging never deletes from it; its own uploads go to `storage/app/public`).
+6. Legacy photos: `cp ../deploy/staging/legacy-uploads.htaccess public/images/uploads/.htaccess`
+   (redirects them to the live site; staging's own uploads go to `storage/app/public`).
 7. Run `deploy/staging/tt-staging-refresh.sh` by hand, time it, read the log.
 8. Add the crontab lines.
 
