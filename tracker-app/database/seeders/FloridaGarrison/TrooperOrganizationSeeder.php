@@ -111,6 +111,12 @@ class TrooperOrganizationSeeder extends Seeder
                 $member = true;
             }
 
+            if ($legacy_id === array_key_first($squad_map) && LegacyGarrison::isTestCoordinator((int) $trooper->id))
+            {
+                //  a test coordinator needs a membership to host events
+                $member = true;
+            }
+
             if (!$member && !$notify)
             {
                 //  not a member and not notified

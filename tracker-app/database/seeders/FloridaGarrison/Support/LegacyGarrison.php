@@ -14,7 +14,7 @@ final class LegacyGarrison
     private static ?array $profile = null;
 
     /**
-     * @param  array{name: string, placeholder_id?: int|null, command_staff_ids?: list<int>|null, squads: array<string, array<string, mixed>>}  $profile
+     * @param  array{name: string, placeholder_id?: int|null, command_staff_ids?: list<int>|null, test_coordinator_ids?: list<int>, squads: array<string, array<string, mixed>>}  $profile
      */
     public static function use(array $profile): void
     {
@@ -54,6 +54,16 @@ final class LegacyGarrison
         $command_staff_ids = self::profile()['command_staff_ids'] ?? null;
 
         return $command_staff_ids === null || in_array($legacy_trooper_id, $command_staff_ids, true);
+    }
+
+    /**
+     * Whether a TT1.0 account is a shared account for trying the event coordinator role
+     * (`test_coordinator_ids`). It imports as an event coordinator and a member of the first
+     * squad, so it has somewhere to host events, whatever its TT1.0 permissions.
+     */
+    public static function isTestCoordinator(int $legacy_trooper_id): bool
+    {
+        return in_array($legacy_trooper_id, self::profile()['test_coordinator_ids'] ?? [], true);
     }
 
     /**

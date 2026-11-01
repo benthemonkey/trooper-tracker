@@ -45,6 +45,8 @@ class MidwestGarrisonSeeder extends Seeder
                 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 19, 40, 71, 86, 88, 117, 118, 124, 125, 184,
                 185, 191, 194, 223, 227,
             ],
+            //  shared "mwg" account, so command staff can try the event coordinator role
+            'test_coordinator_ids' => [318],
             'squads' => [
                 'Midwest Garrison' => [
                     'legacy_id' => 14,

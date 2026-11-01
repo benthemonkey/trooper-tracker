@@ -75,6 +75,11 @@ class TrooperSeeder extends Seeder
                 default => MembershipRole::MEMBER,
             };
 
+            if (LegacyGarrison::isTestCoordinator((int) $trooper->id))
+            {
+                $t->membership_role = MembershipRole::EVENT_COORDINATOR;
+            }
+
             $t->save();
         }
     }

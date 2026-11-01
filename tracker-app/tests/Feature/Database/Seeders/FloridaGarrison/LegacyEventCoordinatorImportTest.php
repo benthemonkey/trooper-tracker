@@ -83,18 +83,7 @@ class LegacyEventCoordinatorImportTest extends TestCase
 
     public function test_trooper_seeder_imports_moderators_off_the_list_as_event_coordinators(): void
     {
-        Schema::table('troopers', function (Blueprint $table): void
-        {
-            foreach (['legal_name', 'phone', 'email', 'password', 'last_active', 'datecreated'] as $column)
-            {
-                $table->string($column)->nullable();
-            }
-
-            foreach (['efast', 'econfirm', 'ecommandnotify', 'approved'] as $column)
-            {
-                $table->integer($column)->default(0);
-            }
-        });
+        $this->addTrooperSeederColumns();
 
         foreach ([101 => 1, 102 => 2, 103 => 2, 104 => 0] as $id => $permissions)
         {
@@ -116,6 +105,57 @@ class LegacyEventCoordinatorImportTest extends TestCase
         $this->assertSame(MembershipRole::MODERATOR, Trooper::findOrFail(102)->membership_role);
         $this->assertSame(MembershipRole::EVENT_COORDINATOR, Trooper::findOrFail(103)->membership_role);
         $this->assertSame(MembershipRole::MEMBER, Trooper::findOrFail(104)->membership_role);
+    }
+
+    public function test_test_coordinators_import_as_event_coordinators_whatever_their_permissions(): void
+    {
+        $this->addTrooperSeederColumns();
+
+        foreach ([201 => 0, 202 => 0] as $id => $permissions)
+        {
+            DB::table('troopers')->insert([
+                'id' => $id,
+                'name' => "Legacy {$id}",
+                'permissions' => $permissions,
+                'approved' => 1,
+                'forum_id' => '',
+            ]);
+        }
+
+        LegacyGarrison::use([
+            'name' => 'Florida Garrison',
+            'test_coordinator_ids' => [201],
+            'squads' => [],
+        ]);
+
+        Model::unguarded(fn () => (new TrooperSeeder)->run());
+
+        $this->assertSame(MembershipRole::EVENT_COORDINATOR, Trooper::findOrFail(201)->membership_role);
+        $this->assertSame(MembershipRole::MEMBER, Trooper::findOrFail(202)->membership_role);
+    }
+
+    public function test_test_coordinators_become_members_of_the_first_squad(): void
+    {
+        $squads = LegacyGarrison::squads();
+        $first_squad = Organization::firstWhere(Organization::NAME, array_key_first($squads));
+
+        $tester = Trooper::factory()->asActive()->create();
+        $member = Trooper::factory()->asActive()->create();
+
+        //  no 501st flag or squad: TT1.0 alone would give neither a membership
+        $this->legacyTrooper($tester);
+        $this->legacyTrooper($member);
+
+        LegacyGarrison::use([
+            'name' => 'Florida Garrison',
+            'test_coordinator_ids' => [$tester->id],
+            'squads' => $squads,
+        ]);
+
+        (new TrooperOrganizationSeeder)->run();
+
+        $this->assertTrue($this->isMemberOf($tester, $first_squad));
+        $this->assertFalse($this->isMemberOf($member, $first_squad));
     }
 
     public function test_event_seeder_keeps_the_legacy_event_creator(): void
@@ -150,6 +190,31 @@ class LegacyEventCoordinatorImportTest extends TestCase
             'command_staff_ids' => $command_staff_ids,
             'squads' => [],
         ]);
+    }
+
+    private function addTrooperSeederColumns(): void
+    {
+        Schema::table('troopers', function (Blueprint $table): void
+        {
+            foreach (['legal_name', 'phone', 'email', 'password', 'last_active', 'datecreated'] as $column)
+            {
+                $table->string($column)->nullable();
+            }
+
+            foreach (['efast', 'econfirm', 'ecommandnotify', 'approved'] as $column)
+            {
+                $table->integer($column)->default(0);
+            }
+        });
+    }
+
+    private function isMemberOf(Trooper $trooper, Organization $organization): bool
+    {
+        return TrooperAssignment::query()
+            ->where(TrooperAssignment::TROOPER_ID, $trooper->id)
+            ->where(TrooperAssignment::ORGANIZATION_ID, $organization->id)
+            ->where(TrooperAssignment::IS_MEMBER, true)
+            ->exists();
     }
 
     private function moderatesGarrison(Trooper $trooper): bool
