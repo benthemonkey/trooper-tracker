@@ -12,7 +12,8 @@ plus `XENFORO_READ_ONLY=true`. Mail goes to the log.
 | `env.staging.example` | `~/trooper-tracker/tracker-app/.env` (chmod 600) |
 | `legacy-db.cnf.example` | `~/.tt-legacy-db.cnf` (chmod 600) |
 | `legacy-uploads.htaccess` | `tracker-app/public/images/uploads/.htaccess` |
-| `crontab.example` | `crontab -e` |
+| `crontab.example` | the DreamHost panel's Cron Jobs (or `crontab -e`) |
+| `check-cron.sh` | run in place from the clone, to test the cron jobs |
 
 ## How the rebuild works
 

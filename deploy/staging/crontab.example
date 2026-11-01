@@ -1,20 +1,28 @@
-# Staging cron jobs. Adjust the PHP path to what `ls -d /usr/local/php8*` shows.
-# The refresh prints only on failure, so the job's email arrives only then.
+# Staging cron jobs. Each command below pastes as-is: it uses $HOME, so there's nothing to
+# fill in. If `ls -d /usr/local/php8*` shows no php84, change the PHP path.
 #
-# DreamHost: create these in the panel (Advanced > Cron Jobs > Add New Cron Job), with
-# "Use locking" on and "When to run: Custom". The panel allows at most 12 run times an hour, so
-# the scheduler and queue run every 5 minutes, not every minute. Every scheduled task falls on
-# a multiple of 5 minutes (see routes/console.php), so nothing is skipped; only the queue
-# heartbeat ticks less often. Server time is Pacific: 2:00 there is 4:00 Central.
+# DreamHost: add each one in the panel (Advanced > Cron Jobs > Add New Cron Job) with
+# "Use locking" on and "When to run: Custom". The panel allows at most 12 run times an hour;
+# every 10 minutes is enough: the hourly and daily tasks in routes/console.php all land on a
+# 10-minute tick, and the frequent ones (queue heartbeat, health check, password-reset
+# cleanup) just run less often. Server time is Pacific: hour 2 there is 4:00 Central.
 #
+# After adding them, `bash ~/trooper-tracker/deploy/staging/check-cron.sh` runs them once the
+# way cron does and says whether they work.
+
+# 1. Staging Data Sync: nightly rebuild from the live legacy DB.
+#    Custom: minute 0, hour 2, every day. Email output to you (it prints only on failure).
+TT_PHP=/usr/local/php84/bin/php $HOME/trooper-tracker/deploy/staging/tt-staging-refresh.sh
+
+# 2. Laravel scheduler. Custom: every 10 minutes. No email.
+cd $HOME/trooper-tracker/tracker-app && /usr/local/php84/bin/php artisan schedule:run >> /dev/null 2>&1
+
+# 3. Laravel queue (no supervisor on shared hosting). Custom: every 10 minutes. No email.
+#    --max-time stays under the interval, so a worker exits before the next one starts.
+cd $HOME/trooper-tracker/tracker-app && /usr/local/php84/bin/php artisan queue:work --stop-when-empty --max-time=580 >> /dev/null 2>&1
+
 # Elsewhere, as crontab lines:
-MAILTO=CHANGE_ME
-TT=/home/CHANGE_ME/trooper-tracker
-PHP=/usr/local/php84/bin/php
-
-# Nightly rebuild from the live legacy DB (server time; check `date`)
-0 2 * * * TT_PHP=$PHP $TT/deploy/staging/tt-staging-refresh.sh
-
-# Laravel scheduler, and the queue (no supervisor on shared hosting)
-*/5 * * * * cd $TT/tracker-app && $PHP artisan schedule:run >> /dev/null 2>&1
-*/5 * * * * cd $TT/tracker-app && $PHP artisan queue:work --stop-when-empty --max-time=280 >> /dev/null 2>&1
+#   MAILTO=you@example.com
+#   0 2 * * *    TT_PHP=/usr/local/php84/bin/php $HOME/trooper-tracker/deploy/staging/tt-staging-refresh.sh
+#   */10 * * * * cd $HOME/trooper-tracker/tracker-app && /usr/local/php84/bin/php artisan schedule:run >> /dev/null 2>&1
+#   */10 * * * * cd $HOME/trooper-tracker/tracker-app && /usr/local/php84/bin/php artisan queue:work --stop-when-empty --max-time=580 >> /dev/null 2>&1
