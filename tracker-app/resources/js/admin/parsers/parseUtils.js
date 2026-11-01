@@ -17,27 +17,29 @@ export function parseUsDate(dateStr) {
     return new Date(y, m - 1, d, 0, 0, 0, 0);
 }
 
-// Parse "m/d/Y - Hi" → JS Date
+// Parse "m/d/Y - Hi" or "Y-m-d - H:i" → JS Date
 export function parseUsDateTime(dateTimeStr) {
     if (!dateTimeStr) {
         return null;
     }
 
-    const [datePart, timePart] = dateTimeStr.split('-').map(s => s.trim());
-    if (!datePart || !timePart) {
+    // Time is "Hi" or "H:i" → e.g. "0930", "15:00"
+    const us = dateTimeStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s*-\s*(\d{1,2}):?(\d{2})$/);
+    const iso = dateTimeStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})\s*-\s*(\d{1,2}):?(\d{2})$/);
+
+    let y, m, d, hour, minute;
+
+    if (us) {
+        [m, d, y, hour, minute] = us.slice(1).map(Number);
+    }
+    else if (iso) {
+        [y, m, d, hour, minute] = iso.slice(1).map(Number);
+    }
+    else {
         return null;
     }
 
-    const [m, d, y] = datePart.split('/').map(Number);
-    if (!m || !d || !y) {
-        return null;
-    }
-
-    // Time is "Hi" → e.g. "0930"
-    const hour = Number(timePart.slice(0, 2));
-    const minute = Number(timePart.slice(2, 4));
-
-    if (Number.isNaN(hour) || Number.isNaN(minute)) {
+    if (!m || !d || !y || hour > 23 || minute > 59) {
         return null;
     }
 

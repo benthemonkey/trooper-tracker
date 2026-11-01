@@ -6,14 +6,17 @@ import { formatUsDateTime, parseUsDateTime } from './parseUtils.js';
 export function theLegionParser(message) {
     const parsed = parseMessage(message);
 
-    return {
-        contact_name: parsed['Contact Name'] ?? null,
-        contact_phone: parsed['Contact Phone Number'] ?? null,
-        contact_email: parsed['Contact Email'] ?? null,
+    // garrison request forms label some fields differently; the first label present wins
+    const field = (...labels) => labels.map(label => parsed[label]).find(value => value !== undefined) ?? null;
 
-        name: parsed['Event Name'] ?? null,
+    return {
+        contact_name: field('Contact Name', 'Contact'),
+        contact_phone: field('Contact Phone Number', 'Phone #'),
+        contact_email: field('Contact Email', 'Email'),
+
+        name: field('Event Name', 'Event'),
         venue: parsed['Venue'] ?? null,
-        venue_address: parsed['Venue address'] ?? null,
+        venue_address: field('Venue address', 'Address'),
 
         event_start: parsed['Event Start'] ? formatUsDateTime(parseUsDateTime(parsed['Event Start'])) : null,
 
