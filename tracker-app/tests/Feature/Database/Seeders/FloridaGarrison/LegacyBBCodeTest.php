@@ -14,7 +14,38 @@ class LegacyBBCodeTest extends TestCase
     {
         $result = LegacyBBCode::toMarkdown('[b]Bold[/b] [i]it[/i] [url=https://example.com]site[/url] [color=red]red[/color]');
 
-        $this->assertSame('**Bold** _it_ [site](https://example.com) <span style="color:red">red</span>', $result);
+        $this->assertSame('**Bold** *it* [site](https://example.com) <span style="color:red">red</span>', $result);
+    }
+
+    public function test_to_markdown_keeps_spaces_outside_emphasis_markers(): void
+    {
+        $result = LegacyBBCode::toMarkdown('[b] Note: [/b]bring water, [i]really[/i]!');
+
+        $this->assertSame('**Note:** bring water, *really*!', $result);
+        $this->assertSame("<p><strong>Note:</strong> bring water, <em>really</em>!</p>\n", Str::markdown($result));
+    }
+
+    public function test_to_markdown_drops_a_tag_nested_in_itself(): void
+    {
+        $this->assertSame('**Gear: helmet and armor**', LegacyBBCode::toMarkdown('[b]Gear: [b]helmet[/b] and armor[/b]'));
+
+        $result = LegacyBBCode::toMarkdown('[b][i][b]Arrive by 9:00[/b][/i][/b]');
+
+        $this->assertSame("<p><em><strong>Arrive by 9:00</strong></em></p>\n", Str::markdown($result));
+    }
+
+    public function test_to_markdown_keeps_sizes_tt1_could_show(): void
+    {
+        $result = LegacyBBCode::toMarkdown("[size=20]a[/size]\n[size=18pt]b[/size]\n[size=HUGE]c[/size]");
+
+        $this->assertSame("<span style=\"font-size:20px\">a</span>\\\n<span style=\"font-size:18pt\">b</span>\\\nc", $result);
+    }
+
+    public function test_to_markdown_drops_stray_tags_outside_code(): void
+    {
+        $result = LegacyBBCode::toMarkdown("Bring water.[/color]\n[code][/b] stays[/code]");
+
+        $this->assertSame("Bring water.\n\n```\n[/b] stays\n```", $result);
     }
 
     public function test_to_markdown_handles_empty_comments(): void

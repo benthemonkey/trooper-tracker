@@ -55,15 +55,20 @@ final class LegacyBBCode
         $text = preg_replace('/\[url=(.*?)\](.*?)\[\/url\]/is', '[$2]($1)', $text);
 
         // Basic inline styles
+        // [b]bold[/b] -> **bold**, [i]italic[/i] -> *italic*, [s]strike[/s] -> ~~strike~~
+        $text = self::dropNestedRepeats($text, ['b', 'i', 's']);
+        foreach (['b' => '**', 'i' => '*', 's' => '~~'] as $tag => $marker)
+        {
+            $text = preg_replace_callback(
+                '/\['.$tag.'\](.*?)\[\/'.$tag.'\]/is',
+                fn ($m) => self::emphasis($m[1], $marker),
+                $text
+            );
+        }
+
         $replacements = [
-            // [b]bold[/b] -> **bold**
-            '/\[b\](.*?)\[\/b\]/is' => '**$1**',
-            // [i]italic[/i] -> _italic_
-            '/\[i\](.*?)\[\/i\]/is' => '_$1_',
             // [u]underline[/u] -> use <u> for lack of native MD underline
             '/\[u\](.*?)\[\/u\]/is' => '<u>$1</u>',
-            // [s]strike[/s] -> ~~strike~~
-            '/\[s\](.*?)\[\/s\]/is' => '~~$1~~',
             // [spoiler]...[/spoiler] -> collapsible via HTML details
             '/\[spoiler\](.*?)\[\/spoiler\]/is' => "<details><summary>spoiler</summary>\n$1\n</details>",
         ];
@@ -73,7 +78,13 @@ final class LegacyBBCode
         }
 
         // Size and color (map to emphasis or inline HTML; Markdown has no native color/size)
-        $text = preg_replace('/\[size=(\d+)\](.*?)\[\/size\]/is', '<span style="font-size:$1px">$2</span>', $text);
+        // TT1.0 read a bare number as pixels; a size it couldn't use ("HUGE") leaves the text as is
+        $text = preg_replace_callback('/\[size=([^\]]*)\](.*?)\[\/size\]/is', function ($m)
+        {
+            return preg_match('/^\s*(\d+)\s*(px|pt)?\s*$/i', $m[1], $size)
+                ? '<span style="font-size:'.$size[1].(strtolower($size[2] ?? '') ?: 'px').'">'.$m[2].'</span>'
+                : $m[2];
+        }, $text);
         $text = preg_replace('/\[color=([#a-zA-Z0-9]+)\](.*?)\[\/color\]/is', '<span style="color:$1">$2</span>', $text);
 
         // Lists
@@ -114,12 +125,76 @@ final class LegacyBBCode
         // Remove residual BBCode tags we don’t handle (light-touch)
         $text = preg_replace('/\[(\/?)(left|right|center)\]/i', '', $text);
 
+        $text = self::stripStrayTags($text);
         $text = self::hardLineBreaks($text);
 
         // Trim excess blank lines
         $text = preg_replace("/\n{3,}/", "\n\n", $text);
 
         return trim($text);
+    }
+
+    /**
+     * Bold inside bold is just bold: drop a tag nested in its own kind, which would otherwise
+     * become marker runs like "*****" that Markdown can't pair up.
+     *
+     * @param  list<string>  $tags
+     */
+    private static function dropNestedRepeats(string $text, array $tags): string
+    {
+        $depth = array_fill_keys($tags, 0);
+
+        return preg_replace_callback('/\[(\/?)('.implode('|', $tags).')\]/i', function ($m) use (&$depth)
+        {
+            $tag = strtolower($m[2]);
+
+            if ($m[1] === '')
+            {
+                return ++$depth[$tag] === 1 ? $m[0] : '';
+            }
+
+            // an unmatched closing tag stays; stripStrayTags drops it later
+            if ($depth[$tag] === 0)
+            {
+                return $m[0];
+            }
+
+            return --$depth[$tag] === 0 ? $m[0] : '';
+        }, $text);
+    }
+
+    /**
+     * Markdown only emphasizes text the markers hug, so "[b] Note: [/b]" becomes " **Note:** ".
+     */
+    private static function emphasis(string $inner, string $marker): string
+    {
+        if (trim($inner) === '')
+        {
+            return $inner;
+        }
+
+        preg_match('/^(\s*)(.*?)(\s*)$/s', $inner, $parts);
+
+        return $parts[1].$marker.$parts[2].$marker.$parts[3];
+    }
+
+    /**
+     * An unmatched tag (a "[/color]" with no opening) showed raw in TT1.0 too; drop it, but not inside code.
+     */
+    private static function stripStrayTags(string $text): string
+    {
+        $parts = preg_split('/(^```\n.*?\n```$)/ms', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+        foreach ($parts as $i => $part)
+        {
+            // odd parts are the code blocks
+            if ($i % 2 === 0)
+            {
+                $parts[$i] = preg_replace('/\[\/?(?:b|i|u|s|color|size|font|url|quote|list|table|tr|td|th|spoiler)(?:=[^\]]*)?\]/i', '', $part);
+            }
+        }
+
+        return implode('', $parts);
     }
 
     /**
