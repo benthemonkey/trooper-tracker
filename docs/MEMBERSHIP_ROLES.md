@@ -299,9 +299,9 @@ Rules:
 | Permission trait | `app/Policies/Concerns/HasTrooperPermissionsTrait.php` |
 | Event create/manage/copy rules | `app/Policies/EventPolicy.php` |
 | Event coordinator scopes | `Event::managedBy()` in `app/Models/Scopes/HasEventScopes.php`, `Organization::eventHostableBy()` in `app/Models/Scopes/HasOrganizationScopes.php` |
-| Register handler | `app/Features/Troopers/Commands/RegisterTrooperCommandHandler.php` |
-| Approve handler | `app/Features/Troopers/Commands/ApproveTrooperCommandHandler.php` |
-| Role change handler | `app/Features/Troopers/Commands/UpdateTrooperAuthorityCommandHandler.php` |
+| Register handler | `app/Messages/Troopers/Commands/CreateTrooper.php` |
+| Approve handler | `app/Messages/Troopers/Commands/Membership/ApproveTrooperMembership.php` |
+| Role change handler | `app/Messages/Troopers/Commands/UpdateTrooperAuthority.php` |
 | Visitor expiry command | `app/Console/Commands/ExpireVisitorAccessCommand.php` |
 | Visitor renewal controller | `app/Http/Controllers/Account/VisitorRenewSubmitController.php` |
 | Permission request messages | `app/Messages/Troopers/Commands/Permissions/` |
