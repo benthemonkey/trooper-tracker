@@ -47,6 +47,12 @@ class MidwestGarrisonSeeder extends Seeder
             ],
             //  shared "mwg" account, so command staff can try the event coordinator role
             'test_coordinator_ids' => [318],
+            //  club rosters were verified when these flags were set, and some list no club id
+            'clubs_accepting_flag_alone' => ['pRebel', 'pMando', 'pSG', 'pDE'],
+            'handlers_are_members' => false,
+            //  501st members of other garrisons, who only need access to events when they visit
+            'visitor_squad' => 0,
+            'place_remaining_members_in_club' => true,
             'squads' => [
                 'Midwest Garrison' => [
                     'legacy_id' => 14,

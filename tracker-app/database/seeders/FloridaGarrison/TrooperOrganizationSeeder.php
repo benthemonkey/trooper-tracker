@@ -34,6 +34,51 @@ class TrooperOrganizationSeeder extends Seeder
             $this->assignOrganizationAndRegion($trooper);
             $this->assignUnit($trooper);
         }
+
+        if (LegacyGarrison::placesRemainingMembersInClub())
+        {
+            $this->placeRemainingMembersInClub();
+        }
+    }
+
+    /**
+     * Keeps the assignment's notification and moderator settings: unlike Issues\Fix242, which
+     * makes the same repair, this doesn't subscribe anyone to anything.
+     */
+    private function placeRemainingMembersInClub()
+    {
+        $member_clubs = [];
+
+        $member_assignments = TrooperAssignment::query()
+            ->with('organization')
+            ->where(TrooperAssignment::IS_MEMBER, true)
+            ->get();
+
+        foreach ($member_assignments as $assignment)
+        {
+            $club_id = (int) strtok($assignment->organization->node_path, ':');
+
+            $member_clubs[$assignment->trooper_id][$club_id] = true;
+        }
+
+        foreach (TrooperOrganization::query()->get() as $membership)
+        {
+            if (isset($member_clubs[$membership->trooper_id][$membership->organization_id]))
+            {
+                continue;
+            }
+
+            $assignment = TrooperAssignment::query()
+                ->where(TrooperAssignment::TROOPER_ID, $membership->trooper_id)
+                ->where(TrooperAssignment::ORGANIZATION_ID, $membership->organization_id)
+                ->first() ?? new TrooperAssignment();
+
+            $assignment->trooper_id = $membership->trooper_id;
+            $assignment->organization_id = $membership->organization_id;
+            $assignment->is_member = true;
+
+            $assignment->save();
+        }
     }
 
     private function assignOrganizationAndRegion($trooper)
@@ -67,18 +112,20 @@ class TrooperOrganizationSeeder extends Seeder
                 $identifier = $trooper->{$club['identity']};
             }
 
-            $has_identifier = $identifier != null && $identifier != '' && $identifier != '0';
+            $has_identifier = !$this->isHandlerWithoutMembership($trooper, $column)
+                && $identifier != null && $identifier != '' && $identifier != '0';
+            $flag_is_enough = !$has_identifier && $this->flagAloneMakesMember($trooper, $column);
 
-            if ($has_identifier)
+            if ($has_identifier || $flag_is_enough)
             {
-                $this->loadTrooperOrganization($trooper, $organization, $identifier);
+                $this->loadTrooperOrganization($trooper, $organization, $has_identifier ? $identifier : null);
             }
 
             //* 0 = Regular Member, 1 = Super Admin, 2 = Moderator, 3 = RIP Member, 4 = Handler
             $moderator = $trooper->permissions == 2
                 && LegacyGarrison::isCommandStaff((int) $trooper->id)
                 && ($trooper->{$column} == 1 || $trooper->{$column} == 2);
-            $member = $has_identifier;
+            $member = $has_identifier || $flag_is_enough;
             $notify = $trooper->{'esquad' . $legacy_id} == 1;
 
             if (!$notify && !$moderator && !$member)
@@ -94,6 +141,23 @@ class TrooperOrganizationSeeder extends Seeder
         }
     }
 
+    /**
+     * Only an approved regular (1) or reserve (2) member counts: retired members and handlers
+     * aren't current members, and an unapproved account's flag is unverified.
+     */
+    private function flagAloneMakesMember($trooper, string $column): bool
+    {
+        return LegacyGarrison::acceptsFlagAlone($column)
+            && $trooper->approved == 1
+            && (int) $trooper->id !== LegacyGarrison::placeholderId()
+            && in_array((int) $trooper->{$column}, [1, 2], true);
+    }
+
+    private function isHandlerWithoutMembership($trooper, string $column): bool
+    {
+        return $trooper->{$column} == 4 && !LegacyGarrison::handlersAreMembers();
+    }
+
     private function assignUnit($trooper)
     {
         $squad_map = $this->getSquadMap();
@@ -104,7 +168,7 @@ class TrooperOrganizationSeeder extends Seeder
 
             $member = false;
 
-            if ($trooper->squad == $legacy_id && $trooper->p501 >= 1)
+            if ($trooper->squad == $legacy_id && $trooper->p501 >= 1 && !$this->isHandlerWithoutMembership($trooper, 'p501'))
             {
                 //  all HasSquadMaps squads are 501st units — same reasoning as the permission
                 //  check above, the squad field alone isn't membership
@@ -142,7 +206,9 @@ class TrooperOrganizationSeeder extends Seeder
 
     private function loadTrooperOrganization($trooper, $organization, $identifier)
     {
-        $exists = TrooperOrganization::query()
+        //  blank identifiers aren't unique: where() would turn null into IS NULL and match
+        //  the club's first member without one
+        $exists = $identifier !== null && TrooperOrganization::query()
             ->where(TrooperOrganization::ORGANIZATION_ID, $organization->id)
             ->where(TrooperOrganization::IDENTIFIER, $identifier)
             ->exists();

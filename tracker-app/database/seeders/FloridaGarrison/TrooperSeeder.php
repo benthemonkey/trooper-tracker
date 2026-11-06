@@ -75,13 +75,54 @@ class TrooperSeeder extends Seeder
                 default => MembershipRole::MEMBER,
             };
 
+            if ($t->membership_role === MembershipRole::MEMBER && $this->isOnlyAHandler($trooper))
+            {
+                $t->membership_role = MembershipRole::HANDLER;
+            }
+
+            if ($t->membership_role === MembershipRole::MEMBER && $this->isVisitingMember($trooper))
+            {
+                $t->membership_role = MembershipRole::VISITOR;
+
+                if ($trooper->approved)
+                {
+                    //  the window a visitor gets on approval; an unapproved one gets it then
+                    $t->visitor_expires_at = now()->addMonths(6);
+                }
+            }
+
             if (LegacyGarrison::isTestCoordinator((int) $trooper->id))
             {
                 $t->membership_role = MembershipRole::EVENT_COORDINATOR;
+                $t->visitor_expires_at = null;
             }
 
             $t->save();
         }
+    }
+
+    private function isOnlyAHandler($trooper): bool
+    {
+        if (LegacyGarrison::handlersAreMembers())
+        {
+            return false;
+        }
+
+        $flags = [];
+
+        foreach (['p501', 'pRebel', 'pDroid', 'pMando', 'pOther', 'pSG', 'pDE'] as $column)
+        {
+            $flags[] = (int) $trooper->{$column};
+        }
+
+        //  1 = regular, 2 = reserve, 4 = handler
+        return in_array(4, $flags, true) && array_intersect([1, 2], $flags) === [];
+    }
+
+    private function isVisitingMember($trooper): bool
+    {
+        return LegacyGarrison::visitorSquad() === (int) $trooper->squad
+            && in_array((int) $trooper->p501, [1, 2], true);
     }
 
     private function getDisplayName($trooper): string

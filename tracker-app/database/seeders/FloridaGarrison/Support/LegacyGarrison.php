@@ -14,7 +14,7 @@ final class LegacyGarrison
     private static ?array $profile = null;
 
     /**
-     * @param  array{name: string, placeholder_id?: int|null, command_staff_ids?: list<int>|null, test_coordinator_ids?: list<int>, squads: array<string, array<string, mixed>>}  $profile
+     * @param  array{name: string, placeholder_id?: int|null, command_staff_ids?: list<int>|null, test_coordinator_ids?: list<int>, clubs_accepting_flag_alone?: list<string>, handlers_are_members?: bool, visitor_squad?: int, place_remaining_members_in_club?: bool, squads: array<string, array<string, mixed>>}  $profile
      */
     public static function use(array $profile): void
     {
@@ -64,6 +64,44 @@ final class LegacyGarrison
     public static function isTestCoordinator(int $legacy_trooper_id): bool
     {
         return in_array($legacy_trooper_id, self::profile()['test_coordinator_ids'] ?? [], true);
+    }
+
+    /**
+     * Whether a club's TT1.0 permission flag (`p501`, `pMando`...) proves membership when the
+     * trooper has no club id on file (`clubs_accepting_flag_alone`). Without a list a
+     * membership needs an id.
+     */
+    public static function acceptsFlagAlone(string $permission_column): bool
+    {
+        return in_array($permission_column, self::profile()['clubs_accepting_flag_alone'] ?? [], true);
+    }
+
+    /**
+     * Whether a TT1.0 handler flag (4) can make a trooper a member of that club or its squads
+     * (`handlers_are_members`). Without the setting it can.
+     */
+    public static function handlersAreMembers(): bool
+    {
+        return self::profile()['handlers_are_members'] ?? true;
+    }
+
+    /**
+     * The TT1.0 squad value marking 501st members from other garrisons (`visitor_squad`), who
+     * import as visitors. Null when the garrison doesn't use one.
+     */
+    public static function visitorSquad(): ?int
+    {
+        return self::profile()['visitor_squad'] ?? null;
+    }
+
+    /**
+     * Whether a member with no squad or region membership in a club becomes a member of the club
+     * itself (`place_remaining_members_in_club`). Membership lists, service records and rosters
+     * only see a trooper with an is_member assignment.
+     */
+    public static function placesRemainingMembersInClub(): bool
+    {
+        return self::profile()['place_remaining_members_in_club'] ?? false;
     }
 
     /**
