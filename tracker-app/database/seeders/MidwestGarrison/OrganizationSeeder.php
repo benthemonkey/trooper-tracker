@@ -15,13 +15,29 @@ use Illuminate\Database\Seeder;
  *
  * TODO(mwg): the non-501st region names are placeholders. The import needs one region under
  * every club because TrooperOrganizationSeeder assigns members to the club's first region.
- * XenForo ids come from the legacy squad/club arrays and are unverified against the forum;
- * confirm them before anything syncs user groups (staging never does).
  */
 class OrganizationSeeder extends Seeder
 {
+    //  "Event Planning" on the forum
+    private const EVENT_FORUM = 222;
+
+    //  Midwest archives by year: 332 is "2026 Completed Events", and 353 takes over on 2027-01-01.
+    //  This value is rebuilt nightly on staging; a live site changes it on the organization's admin page.
+    private const EVENT_ARCHIVE_FORUM = 332;
+
+    //  Forum group for each club's members
+    private const CLUB_GROUPS = [
+        'Rebel Legion' => 836,
+        'Mandalorian Mercs' => 1489,
+        'Dark Empire' => 1499,
+        'Saber Guild' => 1507,
+        'Droid Builders' => 1490,
+        'Galactic Academy' => 1500,
+    ];
+
     public function run(): void
     {
+        $this->loadClubs();
         $this->loadRegions();
         $this->loadUnits();
 
@@ -38,16 +54,32 @@ class OrganizationSeeder extends Seeder
         }
     }
 
+    /**
+     * Replaces the group ids the shared OrganizationSeeder puts on the clubs, which don't exist on
+     * Midwest's forum. The import attaches club members to the club itself, and the user sync only
+     * looks at a member's organization and its ancestors, so a group set only on the region is
+     * treated as one the member shouldn't have, and the sync removes it.
+     */
+    private function loadClubs(): void
+    {
+        foreach (self::CLUB_GROUPS as $name => $group_id)
+        {
+            Organization::where('name', $name)
+                ->whereNull('parent_id')
+                ->update(['xenforo_group_active_id' => $group_id]);
+        }
+    }
+
     private function loadRegions(): void
     {
         $regions = [
-            ['parent' => '501st Legion',      'name' => 'Midwest Garrison', 'related_forum' => 404, 'related_forum_archive' => 326, 'xenforo_group_active_id' => 44],
-            ['parent' => 'Rebel Legion',      'name' => 'Rebel Legion (Midwest)', 'xenforo_group_active_id' => 1486],
-            ['parent' => 'Mandalorian Mercs', 'name' => 'Mandalorian Mercs (Midwest)', 'xenforo_group_active_id' => 1488],
-            ['parent' => 'Dark Empire',       'name' => 'Dark Empire (Midwest)', 'xenforo_group_active_id' => 1511],
-            ['parent' => 'Saber Guild',       'name' => 'Saber Guild (Midwest)', 'xenforo_group_active_id' => 1491],
-            ['parent' => 'Droid Builders',    'name' => 'Droid Builders (Midwest)', 'xenforo_group_active_id' => 1487],
-            ['parent' => 'Galactic Academy',  'name' => 'Galactic Academy (Midwest)'],
+            ['parent' => '501st Legion',      'name' => 'Midwest Garrison', 'related_forum' => self::EVENT_FORUM, 'related_forum_archive' => self::EVENT_ARCHIVE_FORUM, 'xenforo_group_active_id' => 1504],
+            ['parent' => 'Rebel Legion',      'name' => 'Rebel Legion (Midwest)', 'xenforo_group_active_id' => self::CLUB_GROUPS['Rebel Legion']],
+            ['parent' => 'Mandalorian Mercs', 'name' => 'Mandalorian Mercs (Midwest)', 'xenforo_group_active_id' => self::CLUB_GROUPS['Mandalorian Mercs']],
+            ['parent' => 'Dark Empire',       'name' => 'Dark Empire (Midwest)', 'xenforo_group_active_id' => self::CLUB_GROUPS['Dark Empire']],
+            ['parent' => 'Saber Guild',       'name' => 'Saber Guild (Midwest)', 'xenforo_group_active_id' => self::CLUB_GROUPS['Saber Guild']],
+            ['parent' => 'Droid Builders',    'name' => 'Droid Builders (Midwest)', 'xenforo_group_active_id' => self::CLUB_GROUPS['Droid Builders']],
+            ['parent' => 'Galactic Academy',  'name' => 'Galactic Academy (Midwest)', 'xenforo_group_active_id' => self::CLUB_GROUPS['Galactic Academy']],
         ];
 
         foreach ($regions as $data)
@@ -59,7 +91,7 @@ class OrganizationSeeder extends Seeder
     private function loadUnits(): void
     {
         $units = [
-            ['parent' => 'Midwest Garrison', 'name' => '332nd Blurrg Squad', 'related_forum' => 404, 'related_forum_archive' => 326, 'xenforo_group_active_id' => 44],
+            ['parent' => 'Midwest Garrison', 'name' => '332nd Blurrg Squad', 'related_forum' => self::EVENT_FORUM, 'related_forum_archive' => self::EVENT_ARCHIVE_FORUM, 'xenforo_group_active_id' => 1503],
         ];
 
         foreach ($units as $data)

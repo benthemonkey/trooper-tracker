@@ -51,14 +51,14 @@ class MidwestGarrisonSeeder extends Seeder
                 'Midwest Garrison' => [
                     'legacy_id' => 14,
                     'logo' => 'garrison_emblem.png',
-                    'eventForum' => 404,
-                    'userGroup' => 44,
+                    'eventForum' => 222,
+                    'userGroup' => 1504,
                 ],
                 '332nd Blurrg Squad' => [
                     'legacy_id' => 15,
                     'logo' => '',
-                    'eventForum' => 404,
-                    'userGroup' => 44,
+                    'eventForum' => 222,
+                    'userGroup' => 1503,
                 ],
             ],
         ]);
