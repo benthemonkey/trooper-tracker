@@ -8,7 +8,9 @@
 # BUILD.tar.gz is a tarball of public/build made locally (the server has no Node; the Midwest
 # workspace's deploy-staging.sh builds, uploads and runs this). Without it the current build stays,
 # with a warning when the front end changed since it was built. --refresh also rebuilds the data
-# now rather than at the nightly run. TT_NO_PULL=1 deploys whatever is checked out, e.g. after
+# now rather than at the nightly run, and skips migrating the live DB, which it replaces. If that
+# refresh fails, the new code is left running on the unmigrated DB until a refresh succeeds.
+# TT_NO_PULL=1 deploys whatever is checked out, e.g. after
 # `git checkout <sha>` to roll back.
 #
 set -Eeuo pipefail
@@ -98,14 +100,16 @@ main()
         say "WARNING: the front end changed since the build (${built:0:8}); upload a new one"
     fi
 
-    say "migrate $db"
-    "$PHP" artisan config:clear --no-interaction
-    "$PHP" artisan migrate --force --no-interaction
-
-    # Forum login comes from this plugin. The refresh enables it on each new copy, but a deploy can
-    # migrate a copy that doesn't have it yet, which would leave the site with no forum login.
-    say "enable xenforo plugin"
-    "$PHP" artisan plugins:enable xenforo --no-interaction
+    # The refresh builds a new copy from scratch, so migrating this one is wasted work, and a
+    # migration that refuses to run on old data would stop the deploy before the refresh starts.
+    if [ "$refresh" = 1 ]
+    then
+        say "skip migrating $db: the refresh replaces it"
+    else
+        say "migrate $db"
+        "$PHP" artisan config:clear --no-interaction
+        "$PHP" artisan migrate --force --no-interaction
+    fi
 
     say "clear caches, restart queue"
     "$PHP" artisan optimize:clear --no-interaction
