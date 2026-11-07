@@ -102,6 +102,11 @@ main()
     "$PHP" artisan config:clear --no-interaction
     "$PHP" artisan migrate --force --no-interaction
 
+    # Forum login comes from this plugin. The refresh enables it on each new copy, but a deploy can
+    # migrate a copy that doesn't have it yet, which would leave the site with no forum login.
+    say "enable xenforo plugin"
+    "$PHP" artisan plugins:enable xenforo --no-interaction
+
     say "clear caches, restart queue"
     "$PHP" artisan optimize:clear --no-interaction
     "$PHP" artisan queue:restart --no-interaction
