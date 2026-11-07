@@ -500,8 +500,6 @@ class EventSeeder extends Seeder
             : null;
 
         // Carry legacy forum references when present; otherwise clear to null.
-        $event->thread_id = $this->toNullablePositiveInt($legacy->thread_id ?? null);
-        $event->post_id = $this->toNullablePositiveInt($legacy->post_id ?? null);
     }
 
     private function toNullablePositiveInt(mixed $value): ?int

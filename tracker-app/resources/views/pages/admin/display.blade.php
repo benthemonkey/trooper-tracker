@@ -160,6 +160,13 @@
             Create, Update, and Manage Costumes
         </x-dashboard-card>
     @endcan
+    @role(['administrator'])
+    <x-dashboard-card :label="'Merge Costumes'"
+                      :icon="'fa-object-group'"
+                      :url="route('admin.costumes.merge')">
+        Merge a duplicate costume into the one you want to keep.
+    </x-dashboard-card>
+    @endrole
     <x-dashboard-card :label="'Organizations'"
                       :icon="'fa-wrench'"
                       :url="route('admin.organizations.list')">
@@ -181,7 +188,13 @@
                       :url="route('admin.system-check')">
         Verify PHP, server, and integration settings
     </x-dashboard-card>
+    <x-dashboard-card :label="'Plugins'"
+                      :icon="'fa-puzzle-piece'"
+                      :url="route('admin.plugins.list')">
+        Enable, Disable, and Configure Plugins
+    </x-dashboard-card>
     @endrole
+    @pluginSlot('admin.dashboard.cards')
 </x-dashboard-cards>
 
 @endsection

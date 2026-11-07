@@ -180,9 +180,13 @@ tracker-app/
 │   ├── Models/Base/           # Auto-generated from schema — NEVER EDIT
 │   ├── Jobs/                  # Queueable jobs (orchestration only)
 │   ├── Console/Commands/      # Artisan commands (orchestration only)
+│   ├── Plugins/               # Plugin system: manager, hook base provider, registries
 │   ├── Policies/              # Authorization (HasTrooperPermissionsTrait)
 │   ├── Rules/                 # Custom validation rules, organized by feature
 │   └── Services/              # Standalone services (Flash, BreadCrumb, Geocoding, Google)
+├── plugins/<slug>/            # Local plugins (discord, google-sheets, xenforo); see docs/PLUGINS.md
+│   ├── src/                   # Plugin code, namespace from plugin.json
+│   └── tests/                 # Plugin tests (`<namespace>\Tests`, Plugins suite)
 ├── tests/
 │   ├── Feature/               # HTTP, Job, Console Command tests
 │   └── Unit/                  # Message, Policy, Rule, Service tests
@@ -267,7 +271,9 @@ Do not edit anything in `app/Models/Base/` — it is overwritten on regeneration
 | Policies | Unit | Authorization logic in isolation |
 | Rules | Unit | Validation logic in isolation |
 | Services | Unit | Isolated, no framework infrastructure |
+| Plugin code (`plugins/<slug>/src`) | `plugins/<slug>/tests` | Runs in the `Plugins` suite; core tests must not depend on a real plugin |
 | Front-end modules (`resources/js`) | Vitest | Plain JS logic such as the request parsers; `tests/js` mirrors `resources/js` |
+| Pages and user flows | Playwright (`tests/e2e`) | Real browser against a seeded app; see `docs/E2E_TESTING.md` |
 
 ### Conventions
 
@@ -310,7 +316,9 @@ Inject via constructor or `__invoke` parameter:
 # Run tests
 php artisan test
 php artisan test --filter=TestClassName
+php artisan test --testsuite=Plugins      # Plugin tests only
 npm test                                  # Front-end unit tests (Vitest)
+npm run test:e2e                          # Browser tests (Playwright, needs npm run build)
 
 # Code quality
 ./vendor/bin/pint                         # Format code
@@ -373,3 +381,5 @@ Available policies: `AwardPolicy`, `EventPolicy`, `NoticePolicy`, `OrganizationP
 | Authentication flow | `docs/AUTHENTICATION.md` |
 | Console commands reference | `docs/COMMANDS.md` |
 | Deployment | `docs/DEPLOY.md` |
+| Plugins (hooks, slots, settings) | `docs/PLUGINS.md` |
+| Browser tests & coverage plan | `docs/E2E_TESTING.md` |

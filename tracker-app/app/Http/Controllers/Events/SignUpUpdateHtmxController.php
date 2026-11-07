@@ -75,7 +75,8 @@ class SignUpUpdateHtmxController extends PageController
                 return response('Forbidden', 403);
             }
 
-            //  troopers may only pick what the status dropdown offers them; moderators keep
+            //  troopers may only pick what the status dropdown offers them; attendance is
+            //  confirmed through the signed links once a shift closes, and moderators keep
             //  the wider set they need for manual selection
             $isOfferedStatus = array_key_exists($requestedStatus->value, $event->signUpStatusOptions())
                 || $requestedStatus === $event_trooper->status;

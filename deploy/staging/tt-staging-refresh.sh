@@ -29,6 +29,7 @@ DB_A="${TT_DB_A:-mwg_tt_test_a}"
 DB_B="${TT_DB_B:-mwg_tt_test_b}"
 DB_PATTERN="${TT_DB_PATTERN:-^mwg_tt_test_[ab]$}"
 SEEDER="${TT_SEEDER:-MidwestGarrisonSeeder}"
+FORUM_SEEDER="${TT_FORUM_SEEDER:-TroopTracker\\Plugins\\Xenforo\\Database\\Seeders\\MidwestGarrisonForumSeeder}"
 PLACEHOLDER_ID="${TT_PLACEHOLDER_ID:-240}"
 # Allowed shortfall of imported shifts and sign-ups vs legacy (duplicate legacy shifts are merged;
 # 0 on the 2026-10 data)
@@ -133,6 +134,11 @@ checkpoint copy
 
 log "seed $SEEDER"
 idle_artisan db:seed --class="$SEEDER" --force
+#   the forum integration is a plugin: enable it (which runs its migrations and copies the XENFORO_*
+#   values from .env), then set the forum ids and thread links while the legacy tables are still here
+log "enable xenforo plugin"
+idle_artisan plugins:enable xenforo
+idle_artisan db:seed --class="$FORUM_SEEDER" --force
 checkpoint seed
 
 log "check counts"
