@@ -55,7 +55,8 @@ class XenforoUserSyncServiceTest extends TestCase
 
     public function test_sync_trooper_leaves_the_forum_alone_until_the_trooper_is_approved(): void
     {
-        $org = Organization::factory()->create([Organization::XENFORO_GROUP_ACTIVE_ID => 10]);
+        $org = Organization::factory()->create();
+        OrganizationForum::store($org->id, [OrganizationForum::ACTIVE_GROUP_ID => 10]);
 
         foreach ([MembershipStatus::PENDING, MembershipStatus::DENIED] as $status)
         {
@@ -71,7 +72,8 @@ class XenforoUserSyncServiceTest extends TestCase
 
     public function test_debug_sync_reports_no_write_for_an_unapproved_trooper(): void
     {
-        $org = Organization::factory()->create([Organization::XENFORO_GROUP_ACTIVE_ID => 10]);
+        $org = Organization::factory()->create();
+        OrganizationForum::store($org->id, [OrganizationForum::ACTIVE_GROUP_ID => 10]);
         $trooper = Trooper::factory()->create([Trooper::MEMBERSHIP_STATUS => MembershipStatus::PENDING->value]);
         $trooper->organizations()->attach($org->id, ['membership_status' => 'active']);
 
