@@ -23,8 +23,7 @@
         </x-card>
     @endif
 
-    <div x-data="Events.Search.mapSelector(@js($events))"
-         x-init="init()"
+    <div x-data="Events.Search.mapSelector(@js($events), @js(config('services.google.maps_api_key')))"
          style="height: 600px;">
     </div>
 
