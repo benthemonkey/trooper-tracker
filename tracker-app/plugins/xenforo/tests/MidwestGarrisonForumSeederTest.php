@@ -46,6 +46,7 @@ class MidwestGarrisonForumSeederTest extends TestCase
         //  visitors from other garrisons are members of the 501st itself
         $legion_forum = OrganizationForum::forOrganization($legion->id);
         $this->assertSame(1510, $legion_forum->active_group_id);
+        $this->assertSame(1012, $legion_forum->retired_group_id);
         $this->assertNull($legion_forum->event_forum_id);
     }
 

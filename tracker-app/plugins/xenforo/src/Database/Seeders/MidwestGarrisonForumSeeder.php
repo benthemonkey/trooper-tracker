@@ -35,8 +35,9 @@ class MidwestGarrisonForumSeeder extends Seeder
      */
     private const FORUMS = [
         //  "501st": visitors from other garrisons are members of the 501st itself, and the sync
-        //  gives each garrison member their parent organization's group too
-        [null, '501st Legion', ['active_group_id' => 1510]],
+        //  gives each garrison member their parent organization's group too. Retired members get
+        //  "Inactive Members" instead, which can't see the private forums or start threads.
+        [null, '501st Legion', ['active_group_id' => 1510, 'retired_group_id' => 1012]],
         [null, 'Rebel Legion', ['active_group_id' => 836]],
         [null, 'Mandalorian Mercs', ['active_group_id' => 1489]],
         [null, 'Dark Empire', ['active_group_id' => 1499]],
