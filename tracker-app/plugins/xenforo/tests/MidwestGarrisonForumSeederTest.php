@@ -43,8 +43,10 @@ class MidwestGarrisonForumSeederTest extends TestCase
 
         $this->assertSame(1503, OrganizationForum::forOrganization($squad->id)->active_group_id);
         $this->assertSame(836, OrganizationForum::forOrganization($rebels->id)->active_group_id);
-        //  the 501st itself has no group: visitors from other garrisons are its members
-        $this->assertNull(OrganizationForum::forOrganization($legion->id));
+        //  visitors from other garrisons are members of the 501st itself
+        $legion_forum = OrganizationForum::forOrganization($legion->id);
+        $this->assertSame(1510, $legion_forum->active_group_id);
+        $this->assertNull($legion_forum->event_forum_id);
     }
 
     public function test_it_links_imported_events_to_their_legacy_threads(): void

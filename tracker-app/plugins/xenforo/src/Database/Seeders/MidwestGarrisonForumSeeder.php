@@ -34,6 +34,9 @@ class MidwestGarrisonForumSeeder extends Seeder
      * region so a member placed there later keeps it.
      */
     private const FORUMS = [
+        //  "501st": visitors from other garrisons are members of the 501st itself, and the sync
+        //  gives each garrison member their parent organization's group too
+        [null, '501st Legion', ['active_group_id' => 1510]],
         [null, 'Rebel Legion', ['active_group_id' => 836]],
         [null, 'Mandalorian Mercs', ['active_group_id' => 1489]],
         [null, 'Dark Empire', ['active_group_id' => 1499]],
