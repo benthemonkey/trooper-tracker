@@ -35,15 +35,32 @@ class OrganizationSeederTest extends TestCase
         $this->assertSame($large[0], $large[1]);
     }
 
-    public function test_only_the_garrison_gets_an_image(): void
+    public function test_blurrg_squad_gets_its_own_emblem(): void
     {
         Storage::fake('public');
 
         $this->seed(OrganizationSeeder::class);
         $this->seed(MidwestGarrisonOrganizationSeeder::class);
 
-        $with_image = Organization::whereNotNull(Organization::IMAGE_PATH_SM)->pluck(Organization::NAME)->all();
+        $blurrg = Organization::where(Organization::NAME, '332nd Blurrg Squad')->firstOrFail();
 
-        $this->assertSame(['Midwest Garrison'], $with_image);
+        $this->assertSame('organizations/blurrg-squad-128x128.png', $blurrg->image_path_lg);
+        $this->assertSame('organizations/blurrg-squad-32x32.png', $blurrg->image_path_sm);
+        Storage::disk('public')->assertExists([$blurrg->image_path_lg, $blurrg->image_path_sm]);
+    }
+
+    public function test_only_the_garrison_and_blurrg_get_an_image(): void
+    {
+        Storage::fake('public');
+
+        $this->seed(OrganizationSeeder::class);
+        $this->seed(MidwestGarrisonOrganizationSeeder::class);
+
+        $with_image = Organization::whereNotNull(Organization::IMAGE_PATH_SM)
+            ->orderBy(Organization::NAME)
+            ->pluck(Organization::NAME)
+            ->all();
+
+        $this->assertSame(['332nd Blurrg Squad', 'Midwest Garrison'], $with_image);
     }
 }

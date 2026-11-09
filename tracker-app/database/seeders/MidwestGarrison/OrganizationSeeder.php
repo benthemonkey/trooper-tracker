@@ -26,7 +26,7 @@ class OrganizationSeeder extends Seeder
     {
         $this->loadRegions();
         $this->loadUnits();
-        $this->loadEmblem();
+        $this->loadEmblems();
 
         Organization::resequenceAll();
 
@@ -65,33 +65,41 @@ class OrganizationSeeder extends Seeder
     }
 
     /**
-     * The garrison emblem (public/img/midwest-garrison-emblem.png, already square) as the
-     * Midwest Garrison organization's logo, in the two sizes an admin upload makes. Written
-     * outside uploads/organizations, which the staging refresh empties after each import.
+     * The garrison's and Blurrg Squad's emblems (public/img, already square) as their
+     * organizations' logos, in the two sizes an admin upload makes. Written outside
+     * uploads/organizations, which the staging refresh empties after each import.
      */
-    private function loadEmblem(): void
+    private function loadEmblems(): void
     {
-        $organization = Organization::where(Organization::NAME, 'Midwest Garrison')->first();
-        $source = public_path('img/midwest-garrison-emblem.png');
-
-        if ($organization === null || !is_file($source))
-        {
-            return;
-        }
+        $emblems = [
+            'Midwest Garrison' => 'midwest-garrison',
+            '332nd Blurrg Squad' => 'blurrg-squad',
+        ];
 
         $manager = new ImageManager(new Driver);
 
-        foreach ([128, 32] as $size)
+        foreach ($emblems as $name => $slug)
         {
-            $path = "organizations/midwest-garrison-{$size}x{$size}.png";
-            $image = $manager->read($source)->scaleDown($size, $size);
+            $organization = Organization::where(Organization::NAME, $name)->first();
+            $source = public_path("img/{$slug}-emblem.png");
 
-            Storage::disk('public')->put($path, (string) $image->encodeByExtension('png'));
+            if ($organization === null || !is_file($source))
+            {
+                continue;
+            }
 
-            $organization->{$size === 128 ? Organization::IMAGE_PATH_LG : Organization::IMAGE_PATH_SM} = $path;
+            foreach ([128, 32] as $size)
+            {
+                $path = "organizations/{$slug}-{$size}x{$size}.png";
+                $image = $manager->read($source)->scaleDown($size, $size);
+
+                Storage::disk('public')->put($path, (string) $image->encodeByExtension('png'));
+
+                $organization->{$size === 128 ? Organization::IMAGE_PATH_LG : Organization::IMAGE_PATH_SM} = $path;
+            }
+
+            $organization->save();
         }
-
-        $organization->save();
     }
 
     private function saveChild(string $parent_name, string $name, OrganizationType $type): void
