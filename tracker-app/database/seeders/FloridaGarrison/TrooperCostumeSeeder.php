@@ -117,6 +117,7 @@ class TrooperCostumeSeeder extends Seeder
             ->first();
 
         $trooper_costume = TrooperCostume::query()
+            ->withPending()
             ->where(TrooperCostume::TROOPER_ID, $legacy_costume->trooperid)
             ->where(TrooperCostume::ORGANIZATION_COSTUME_ID, $org_costume->id)
             ->first();
@@ -127,6 +128,9 @@ class TrooperCostumeSeeder extends Seeder
 
             $trooper_costume->trooper_id = $legacy_costume->trooperid;
             $trooper_costume->organization_costume_id = $org_costume->id;
+            //  set here: the garrison seeders run WithoutModelEvents, so the
+            //  model's creating hook that approves new rows never fires
+            $trooper_costume->approved_at = now();
 
             $trooper_costume->save();
         }
