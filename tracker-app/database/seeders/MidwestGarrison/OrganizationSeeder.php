@@ -8,6 +8,9 @@ use App\Enums\OrganizationType;
 use App\Models\Observers\OrganizationObserver;
 use App\Models\Organization;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
 
 /**
  * Midwest is one garrison-wide group (legacy squad 14 "Midwest Garrison") plus the 332nd Blurrg
@@ -23,13 +26,14 @@ class OrganizationSeeder extends Seeder
     {
         $this->loadRegions();
         $this->loadUnits();
+        $this->loadEmblem();
 
         Organization::resequenceAll();
 
         //  model events are blocked during seeding, so we
         //  need to manually trigger the observer to set any
         //  derived fields
-        $observer = new OrganizationObserver();
+        $observer = new OrganizationObserver;
         $organizations = Organization::all();
         foreach ($organizations as $organization)
         {
@@ -60,6 +64,36 @@ class OrganizationSeeder extends Seeder
         $this->saveChild('Midwest Garrison', '332nd Blurrg Squad', OrganizationType::UNIT);
     }
 
+    /**
+     * The garrison emblem (public/img/midwest-garrison-emblem.png, already square) as the
+     * Midwest Garrison organization's logo, in the two sizes an admin upload makes. Written
+     * outside uploads/organizations, which the staging refresh empties after each import.
+     */
+    private function loadEmblem(): void
+    {
+        $organization = Organization::where(Organization::NAME, 'Midwest Garrison')->first();
+        $source = public_path('img/midwest-garrison-emblem.png');
+
+        if ($organization === null || !is_file($source))
+        {
+            return;
+        }
+
+        $manager = new ImageManager(new Driver);
+
+        foreach ([128, 32] as $size)
+        {
+            $path = "organizations/midwest-garrison-{$size}x{$size}.png";
+            $image = $manager->read($source)->scaleDown($size, $size);
+
+            Storage::disk('public')->put($path, (string) $image->encodeByExtension('png'));
+
+            $organization->{$size === 128 ? Organization::IMAGE_PATH_LG : Organization::IMAGE_PATH_SM} = $path;
+        }
+
+        $organization->save();
+    }
+
     private function saveChild(string $parent_name, string $name, OrganizationType $type): void
     {
         $parent = Organization::where('name', $parent_name)->first();
@@ -71,7 +105,7 @@ class OrganizationSeeder extends Seeder
 
         $org = Organization::where('name', $name)
             ->where('parent_id', $parent->id)
-            ->first() ?? new Organization();
+            ->first() ?? new Organization;
 
         $org->name = $name;
         $org->parent_id = $parent->id;

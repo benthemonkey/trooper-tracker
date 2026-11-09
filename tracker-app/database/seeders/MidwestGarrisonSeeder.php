@@ -56,7 +56,8 @@ class MidwestGarrisonSeeder extends Seeder
             'squads' => [
                 'Midwest Garrison' => [
                     'legacy_id' => 14,
-                    'logo' => 'garrison_emblem.png',
+                    //  unused by the import; MidwestGarrison\OrganizationSeeder sets the emblem
+                    'logo' => '',
                     'eventForum' => 222,
                     'userGroup' => 1504,
                 ],
