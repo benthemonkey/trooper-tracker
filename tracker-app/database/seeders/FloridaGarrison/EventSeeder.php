@@ -170,7 +170,7 @@ class EventSeeder extends Seeder
             ->all();
 
         $this->placeholder_id = LegacyGarrison::placeholderId();
-        $this->guest_added_by_id = Trooper::where(Trooper::MEMBERSHIP_ROLE, MembershipRole::ADMINISTRATOR)
+        $this->guest_added_by_id = Trooper::where(Trooper::MEMBERSHIP_ROLE, MembershipRole::SYSTEM_OWNER)
             ->orderBy(Trooper::ID)
             ->value(Trooper::ID) ?? $this->placeholder_id;
 

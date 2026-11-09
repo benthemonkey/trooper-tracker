@@ -28,7 +28,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_returns_troopers_with_attended_closed_events(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
 
         $trooper_with_attendance = Trooper::factory()->asMember()->create();
         $trooper_without_attendance = Trooper::factory()->asMember()->create();
@@ -46,7 +46,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_excludes_troopers_with_only_non_attended_status(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
 
         $event = Event::factory()->asClosed()->withEventStart(now()->subDays(10))->create();
@@ -61,7 +61,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_excludes_attended_shifts_on_non_closed_events(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
 
         $event = Event::factory()->withEventStart(now()->subDays(10))->create(); // open, not closed
@@ -76,7 +76,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_excludes_events_whose_type_does_not_count(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
         $uncounted = EventType::factory()->uncounted()->create();
 
@@ -128,7 +128,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_adds_event_shifts_count_property(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
 
         $event = Event::factory()->asClosed()->withEventStart(now()->subDays(10))->create();
@@ -146,7 +146,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_event_shifts_count_excludes_non_attended_status(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
 
         $event = Event::factory()->asClosed()->withEventStart(now()->subDays(10))->create();
@@ -167,7 +167,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_adds_events_count_property(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
 
         $event1 = Event::factory()->asClosed()->withEventStart(now()->subDays(10))->create();
@@ -186,7 +186,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_events_count_deduplicates_across_shifts_for_same_event(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
 
         $event = Event::factory()->asClosed()->withEventStart(now()->subDays(10))->create();
@@ -208,7 +208,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_respects_date_start(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
 
         $event1 = Event::factory()->asClosed()->withEventStart(Carbon::parse('2026-02-15'))->create();
@@ -227,7 +227,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_respects_date_end(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
 
         $event1 = Event::factory()->asClosed()->withEventStart(Carbon::parse('2026-01-15'))->create();
@@ -246,7 +246,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_date_filter_excludes_trooper_entirely_when_no_matching_events(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
 
         $event = Event::factory()->asClosed()->withEventStart(Carbon::parse('2025-06-01'))->create();
@@ -264,7 +264,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_filters_active_members_only(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $active_trooper = Trooper::factory()->asMember()->create();
         $retired_trooper = Trooper::factory()->asRetired()->create();
 
@@ -283,7 +283,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_active_only_false_includes_retired_troopers(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $active_trooper = Trooper::factory()->asMember()->create();
         $retired_trooper = Trooper::factory()->asRetired()->create();
 
@@ -306,7 +306,7 @@ class GetTrooperEventSummaryTest extends TestCase
     public function test_handle_organization_filter_counts_only_matching_org_shifts(): void
     {
         $this->skipIfSqlite();
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
         $org = Organization::factory()->create();
         $other_org = Organization::factory()->create();
@@ -331,7 +331,7 @@ class GetTrooperEventSummaryTest extends TestCase
     public function test_handle_organization_filter_includes_former_member_credit(): void
     {
         $this->skipIfSqlite();
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
         $org = Organization::factory()->create();
         $other_org = Organization::factory()->create();
@@ -355,7 +355,7 @@ class GetTrooperEventSummaryTest extends TestCase
     public function test_handle_organization_filter_credits_events_attributed_to_ancestor_org(): void
     {
         $this->skipIfSqlite();
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
         $garrison = Organization::factory()->create();
         $squad = Organization::factory()->withParent($garrison)->create();
@@ -377,7 +377,7 @@ class GetTrooperEventSummaryTest extends TestCase
     public function test_handle_organization_filter_selecting_root_includes_descendant_squad_members(): void
     {
         $this->skipIfSqlite();
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
         $garrison = Organization::factory()->create();
         $squad = Organization::factory()->withParent($garrison)->create();
@@ -399,7 +399,7 @@ class GetTrooperEventSummaryTest extends TestCase
     public function test_handle_organization_filter_does_not_credit_unrelated_sibling_org(): void
     {
         $this->skipIfSqlite();
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
         $garrison = Organization::factory()->create();
         $squad = Organization::factory()->withParent($garrison)->create();
@@ -428,7 +428,7 @@ class GetTrooperEventSummaryTest extends TestCase
     public function test_handle_accessible_org_ids_filters_counts_to_accessible_orgs(): void
     {
         $this->skipIfSqlite();
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
         $accessible_org = Organization::factory()->create();
         $other_org = Organization::factory()->create();
@@ -453,7 +453,7 @@ class GetTrooperEventSummaryTest extends TestCase
     public function test_handle_accessible_org_ids_includes_former_member_with_direct_credit(): void
     {
         $this->skipIfSqlite();
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
         $accessible_org = Organization::factory()->create();
         $other_org = Organization::factory()->create();
@@ -536,7 +536,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_empty_accessible_org_ids_applies_no_costume_filter(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
 
         $event = Event::factory()->asClosed()->withEventStart(now()->subDays(5))->create();
@@ -557,7 +557,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_default_sort_is_event_shifts_count_descending(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $few = Trooper::factory()->asMember()->create();
         $many = Trooper::factory()->asMember()->create();
 
@@ -578,7 +578,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_sort_by_display_name_ascending(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $b = Trooper::factory()->asMember()->withDisplayName('Beta Trooper')->create();
         $a = Trooper::factory()->asMember()->withDisplayName('Alpha Trooper')->create();
 
@@ -597,7 +597,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_sort_by_events_count_descending(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $few = Trooper::factory()->asMember()->create();
         $many = Trooper::factory()->asMember()->create();
 
@@ -619,7 +619,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_sort_by_event_shifts_count_ascending(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $few = Trooper::factory()->asMember()->create();
         $many = Trooper::factory()->asMember()->create();
 
@@ -640,7 +640,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_falls_back_to_event_shifts_count_for_invalid_sort(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $few = Trooper::factory()->asMember()->create();
         $many = Trooper::factory()->asMember()->create();
 
@@ -660,7 +660,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_falls_back_to_desc_for_invalid_dir(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $few = Trooper::factory()->asMember()->create();
         $many = Trooper::factory()->asMember()->create();
 
@@ -689,7 +689,7 @@ class GetTrooperEventSummaryTest extends TestCase
     public function test_handle_organization_filter_rule1_counts_explicit_organization_id(): void
     {
         $this->skipIfSqlite();
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
         $org = Organization::factory()->create();
 
@@ -710,7 +710,7 @@ class GetTrooperEventSummaryTest extends TestCase
     public function test_handle_organization_filter_rule1_excludes_trooper_with_different_explicit_org(): void
     {
         $this->skipIfSqlite();
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
         $target_org = Organization::factory()->create();
         $other_org = Organization::factory()->create();
@@ -731,7 +731,7 @@ class GetTrooperEventSummaryTest extends TestCase
     public function test_handle_join_date_after_event_start_is_still_counted(): void
     {
         $this->skipIfSqlite();
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
         $trooper = Trooper::factory()->asMember()->create();
         $org = Organization::factory()->withNodePath('501:')->create();
 
@@ -758,7 +758,7 @@ class GetTrooperEventSummaryTest extends TestCase
 
     public function test_handle_paginates_results(): void
     {
-        $moderator = Trooper::factory()->asAdministrator()->create();
+        $moderator = Trooper::factory()->asSystemOwner()->create();
 
         $event = Event::factory()->asClosed()->withEventStart(now()->subDays(5))->create();
 

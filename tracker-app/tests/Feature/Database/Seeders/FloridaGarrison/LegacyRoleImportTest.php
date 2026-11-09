@@ -114,7 +114,7 @@ class LegacyRoleImportTest extends TestCase
 
         $this->import(self::MIDWEST_RULES);
 
-        $this->assertSame(MembershipRole::ADMINISTRATOR, $this->role(1));
+        $this->assertSame(MembershipRole::SYSTEM_OWNER, $this->role(1));
         $this->assertSame(MembershipRole::MODERATOR, $this->role(2));
     }
 

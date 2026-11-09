@@ -17,11 +17,11 @@ class GetModeratorsTest extends TestCase
     {
         Trooper::factory()->asModerator()->withDisplayName('Zulu Moderator')->create();
         Trooper::factory()->asModerator()->withDisplayName('Alpha Moderator')->create();
-        Trooper::factory()->asAdministrator()->withDisplayName('Administrator Trooper')->create();
+        Trooper::factory()->asSystemOwner()->withDisplayName('Administrator Trooper')->create();
         Trooper::factory()->asMember()->withDisplayName('Member Trooper')->create();
         Trooper::factory()->asModerator()->asRetired()->withDisplayName('Retired Moderator')->create();
 
-        $subject = new GetModerators();
+        $subject = new GetModerators;
 
         $result = $subject->handle();
 

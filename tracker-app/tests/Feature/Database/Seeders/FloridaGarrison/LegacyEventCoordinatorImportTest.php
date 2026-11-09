@@ -101,7 +101,7 @@ class LegacyEventCoordinatorImportTest extends TestCase
         //  db:seed unguards models, which is what lets the import keep legacy ids
         Model::unguarded(fn () => (new TrooperSeeder)->run());
 
-        $this->assertSame(MembershipRole::ADMINISTRATOR, Trooper::findOrFail(101)->membership_role);
+        $this->assertSame(MembershipRole::SYSTEM_OWNER, Trooper::findOrFail(101)->membership_role);
         $this->assertSame(MembershipRole::MODERATOR, Trooper::findOrFail(102)->membership_role);
         $this->assertSame(MembershipRole::EVENT_COORDINATOR, Trooper::findOrFail(103)->membership_role);
         $this->assertSame(MembershipRole::MEMBER, Trooper::findOrFail(104)->membership_role);

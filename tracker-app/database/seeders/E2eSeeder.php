@@ -18,7 +18,6 @@ use App\Models\TrooperAssignment;
 use App\Models\TrooperNotification;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use RuntimeException;
 
 /**
@@ -41,7 +40,7 @@ class E2eSeeder extends Seeder
 
         $legion = Organization::where(Organization::NAME, '501st Legion')->firstOrFail();
 
-        $this->persona('admin@e2e.test', 'E2E Administrator', MembershipRole::ADMINISTRATOR);
+        $this->persona('admin@e2e.test', 'E2E Administrator', MembershipRole::SYSTEM_OWNER);
         $moderator = $this->persona('moderator@e2e.test', 'E2E Moderator', MembershipRole::MODERATOR);
         $member = $this->persona('member@e2e.test', 'E2E Member', MembershipRole::MEMBER);
 
@@ -69,14 +68,11 @@ class E2eSeeder extends Seeder
 
     private function notification(Trooper $trooper, string $title, string $url): void
     {
-        TrooperNotification::create([
-            'id' => (string) Str::uuid(),
-            'type' => 'E2eNotification',
-            'notifiable_type' => Trooper::class,
-            'notifiable_id' => $trooper->id,
-            'data' => ['title' => $title, 'body' => 'Sign up on the event page.', 'url' => $url],
-            'read_at' => null,
-        ]);
+        TrooperNotification::factory()
+            ->forTrooper($trooper)
+            ->withData(['title' => $title, 'body' => 'Sign up on the event page.', 'url' => $url])
+            ->asUnread()
+            ->create();
     }
 
     private function persona(

@@ -66,7 +66,7 @@ class TrooperSeeder extends Seeder
             $t->membership_role = match ((int) $trooper->permissions)
             {
                 0 => MembershipRole::MEMBER,
-                1 => MembershipRole::ADMINISTRATOR,
+                1 => MembershipRole::SYSTEM_OWNER,
                 2 => LegacyGarrison::isCommandStaff((int) $trooper->id)
                     ? MembershipRole::MODERATOR
                     : MembershipRole::EVENT_COORDINATOR,
