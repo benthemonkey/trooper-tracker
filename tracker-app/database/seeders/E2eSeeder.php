@@ -15,8 +15,10 @@ use App\Models\Organization;
 use App\Models\OrganizationCostume;
 use App\Models\Trooper;
 use App\Models\TrooperAssignment;
+use App\Models\TrooperNotification;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use RuntimeException;
 
 /**
@@ -41,7 +43,7 @@ class E2eSeeder extends Seeder
 
         $this->persona('admin@e2e.test', 'E2E Administrator', MembershipRole::ADMINISTRATOR);
         $moderator = $this->persona('moderator@e2e.test', 'E2E Moderator', MembershipRole::MODERATOR);
-        $this->persona('member@e2e.test', 'E2E Member', MembershipRole::MEMBER);
+        $member = $this->persona('member@e2e.test', 'E2E Member', MembershipRole::MEMBER);
 
         $this->assign($moderator, $legion, is_moderator: true);
 
@@ -59,8 +61,22 @@ class E2eSeeder extends Seeder
         $this->costume($legion, 'E2E Duplicate Armor');
         $this->costume($legion, 'E2E Kept Armor');
 
-        $this->openEvent($legion, 'E2E Open Troop');
+        $event = $this->openEvent($legion, 'E2E Open Troop');
         $this->eventTypes($legion);
+
+        $this->notification($member, 'E2E Open Troop is open for sign-up', '/events/details/'.$event->id);
+    }
+
+    private function notification(Trooper $trooper, string $title, string $url): void
+    {
+        TrooperNotification::create([
+            'id' => (string) Str::uuid(),
+            'type' => 'E2eNotification',
+            'notifiable_type' => Trooper::class,
+            'notifiable_id' => $trooper->id,
+            'data' => ['title' => $title, 'body' => 'Sign up on the event page.', 'url' => $url],
+            'read_at' => null,
+        ]);
     }
 
     private function persona(
@@ -127,7 +143,7 @@ class E2eSeeder extends Seeder
         ]);
     }
 
-    private function openEvent(Organization $organization, string $name, string $type = EventType::DEFAULT_SLUG): void
+    private function openEvent(Organization $organization, string $name, string $type = EventType::DEFAULT_SLUG): Event
     {
         $start = now()->addWeeks(2)->setTime(10, 0);
 
@@ -145,5 +161,7 @@ class E2eSeeder extends Seeder
             EventShift::SHIFT_STARTS_AT => $start,
             EventShift::SHIFT_ENDS_AT => $start->copy()->addHours(4),
         ]);
+
+        return $event;
     }
 }

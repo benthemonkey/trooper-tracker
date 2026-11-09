@@ -13,6 +13,7 @@ class PushNotificationClearController
     {
         $request->user()->notifications()->delete();
 
-        return redirect()->route('account.push-notifications');
+        //  back to the page the bell's dropdown was opened on
+        return redirect()->back(fallback: route('events.list'));
     }
 }
