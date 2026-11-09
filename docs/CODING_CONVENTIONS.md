@@ -510,7 +510,6 @@ All enums are backed by strings and use the `HasEnumHelpers` trait.
 - **AwardFrequency:** `once`, `monthly`, `yearly`
 - **EventStatus:** `draft`, `open`, `closed`, `cancelled`
 - **EventTrooperStatus:** `none`, `going`, `tentative`, `unavailable`
-- **EventType:** `regular`, `special`, `fundraiser`
 - **MembershipRole:** `member`, `moderator`, `administrator`
 - **MembershipStatus:** `pending`, `active`, `retired`
 - **NoticeType:** `info`, `warning`, `alert`

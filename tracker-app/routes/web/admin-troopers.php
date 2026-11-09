@@ -2,14 +2,19 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\Troopers\ApproveCostumeController;
 use App\Http\Controllers\Admin\Troopers\ApproveMembershipsController;
 use App\Http\Controllers\Admin\Troopers\ApprovePermissionsController;
+use App\Http\Controllers\Admin\Troopers\ApproveTroopCreditController;
 use App\Http\Controllers\Admin\Troopers\ApproveTrooperMembershipController;
 use App\Http\Controllers\Admin\Troopers\ApproveTrooperRequestController;
 use App\Http\Controllers\Admin\Troopers\AuthorityController;
 use App\Http\Controllers\Admin\Troopers\AuthoritySubmitController;
 use App\Http\Controllers\Admin\Troopers\ChangesController;
+use App\Http\Controllers\Admin\Troopers\ClearUntrustedSubmitController;
+use App\Http\Controllers\Admin\Troopers\CostumeApprovalsController;
 use App\Http\Controllers\Admin\Troopers\CostumesController;
+use App\Http\Controllers\Admin\Troopers\DenyCostumeController;
 use App\Http\Controllers\Admin\Troopers\DenyPermissionsController;
 use App\Http\Controllers\Admin\Troopers\DenyTrooperMembershipController;
 use App\Http\Controllers\Admin\Troopers\DenyTrooperRequestController;
@@ -20,6 +25,7 @@ use App\Http\Controllers\Admin\Troopers\ListController;
 use App\Http\Controllers\Admin\Troopers\LookupMembershipController;
 use App\Http\Controllers\Admin\Troopers\LookupTrooperPermissionsController;
 use App\Http\Controllers\Admin\Troopers\MarkRipSubmitController;
+use App\Http\Controllers\Admin\Troopers\MarkUntrustedSubmitController;
 use App\Http\Controllers\Admin\Troopers\MembershipController;
 use App\Http\Controllers\Admin\Troopers\MembershipRemoveController;
 use App\Http\Controllers\Admin\Troopers\MembershipSubmitController;
@@ -30,8 +36,12 @@ use App\Http\Controllers\Admin\Troopers\ProfileController;
 use App\Http\Controllers\Admin\Troopers\ProfileSubmitController;
 use App\Http\Controllers\Admin\Troopers\RecruitController;
 use App\Http\Controllers\Admin\Troopers\RecruitSubmitController;
+use App\Http\Controllers\Admin\Troopers\RejectTroopCreditController;
 use App\Http\Controllers\Admin\Troopers\RequestPermissionsController;
 use App\Http\Controllers\Admin\Troopers\RequestPermissionsSubmitController;
+use App\Http\Controllers\Admin\Troopers\RevokeCostumeController;
+use App\Http\Controllers\Admin\Troopers\TroopVerificationsController;
+use App\Http\Controllers\Admin\Troopers\UndoRevokeCostumeController;
 use App\Http\Controllers\Admin\Troopers\UnmarkRipSubmitController;
 use App\Http\Controllers\Admin\Troopers\UnvoidSubmitController;
 use App\Http\Controllers\Admin\Troopers\VoidSubmitController;
@@ -40,7 +50,7 @@ use Illuminate\Support\Facades\Route;
 //  ADMIN/TROOPERs
 Route::prefix('admin/troopers')
     ->name('admin.troopers.')
-    ->middleware(['auth', 'check.role:moderator,administrator'])
+    ->middleware(['auth', 'check.role:moderator,staff_officer,administrator'])
     ->group(function ()
     {
         Route::get('/', ListController::class)->name('list');
@@ -67,7 +77,7 @@ Route::prefix('admin/troopers')
                 Route::get('/lookup/{trooper}', LookupTrooperPermissionsController::class)
                     ->name('lookup');
 
-                Route::middleware('check.role:administrator')
+                Route::middleware('check.role:staff_officer,administrator')
                     ->group(function ()
                     {
                         Route::get('/approvals', PermissionApprovalsController::class)
@@ -81,11 +91,37 @@ Route::prefix('admin/troopers')
                     });
             });
 
+        Route::get('/costume-approvals', CostumeApprovalsController::class)->name('costume-approvals');
+        Route::post('/costumes/{trooper_costume}/approve', ApproveCostumeController::class)
+            ->name('costumes.approve');
+        Route::post('/costumes/{trooper_costume}/deny', DenyCostumeController::class)
+            ->name('costumes.deny');
+        Route::post('/costumes/{trooper_costume}/revoke', RevokeCostumeController::class)
+            ->name('costumes.revoke');
+        Route::post('/costumes/{trooper_costume}/undo-revoke', UndoRevokeCostumeController::class)
+            ->name('costumes.undo-revoke')
+            ->withTrashed();
+
+        Route::get('/troop-verifications', TroopVerificationsController::class)
+            ->name('troop-verifications');
+        Route::post(
+            '/troop-verifications/{event_trooper}/{organization}/approve',
+            ApproveTroopCreditController::class
+        )->name('troop-verifications.approve');
+        Route::post(
+            '/troop-verifications/{event_trooper}/{organization}/reject',
+            RejectTroopCreditController::class
+        )->name('troop-verifications.reject');
+
         Route::get('/recruit', RecruitController::class)->name('recruit');
         Route::post('/recruit', RecruitSubmitController::class);
 
-        Route::get('/merge', MergeTroopersController::class)->name('merge');
-        Route::post('/merge', MergeTroopersSubmitController::class);
+        Route::middleware('check.role:administrator')
+            ->group(function ()
+            {
+                Route::get('/merge', MergeTroopersController::class)->name('merge');
+                Route::post('/merge', MergeTroopersSubmitController::class);
+            });
 
         Route::get('/{trooper}', ProfileController::class)->name('profile');
         Route::post('/{trooper}', ProfileSubmitController::class);
@@ -103,4 +139,6 @@ Route::prefix('admin/troopers')
         Route::post('/{trooper}/unvoid', UnvoidSubmitController::class)->name('unvoid');
         Route::post('/{trooper}/rip', MarkRipSubmitController::class)->name('rip');
         Route::post('/{trooper}/unrip', UnmarkRipSubmitController::class)->name('unrip');
+        Route::post('/{trooper}/untrusted', MarkUntrustedSubmitController::class)->name('untrusted');
+        Route::post('/{trooper}/trusted', ClearUntrustedSubmitController::class)->name('trusted');
     });

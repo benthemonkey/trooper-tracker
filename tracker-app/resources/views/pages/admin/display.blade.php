@@ -104,6 +104,28 @@
             <p class="text-success mb-0">No pending requests</p>
         @endif
     </x-dashboard-card>
+    <x-dashboard-card :label="'Costume Approvals'"
+                      :icon="'fa-user-astronaut'"
+                      :url="route('admin.troopers.costume-approvals')">
+        @if($pending_costumes > 0)
+            <p class="text-warning mb-0">
+                {{ $pending_costumes }} costume{{ $pending_costumes === 1 ? '' : 's' }} awaiting review
+            </p>
+        @else
+            <p class="text-success mb-0">No costumes waiting</p>
+        @endif
+    </x-dashboard-card>
+    <x-dashboard-card :label="'Troop Verifications'"
+                      :icon="'fa-user-clock'"
+                      :url="route('admin.troopers.troop-verifications')">
+        @if($troops_awaiting_verification > 0)
+            <p class="text-warning mb-0">
+                {{ $troops_awaiting_verification }} troop{{ $troops_awaiting_verification === 1 ? '' : 's' }} awaiting verification
+            </p>
+        @else
+            <p class="text-success mb-0">No troops waiting</p>
+        @endif
+    </x-dashboard-card>
     <x-dashboard-card :label="'Troopers'"
                       :icon="'fa-users-gear'"
                       :url="route('admin.troopers.list')">
@@ -119,7 +141,7 @@
                       :url="route('admin.troopers.permissions.request')">
         Ask an administrator to change a trooper's role or forum groups.
     </x-dashboard-card>
-    @role(['administrator'])
+    @role(['administrator', 'staff_officer'])
     <x-dashboard-card :label="'Permission Approvals'"
                       :icon="'fa-user-lock'"
                       :url="route('admin.troopers.permissions.approvals')">
@@ -132,6 +154,8 @@
             <p class="text-success mb-0">No pending requests</p>
         @endif
     </x-dashboard-card>
+    @endrole
+    @role(['administrator'])
     <x-dashboard-card :label="'Merge Troopers'"
                       :icon="'fa-user-group'"
                       :url="route('admin.troopers.merge')">
@@ -148,6 +172,13 @@
                       :url="route('admin.events.list')">
         Create, Update, and Manage Events
     </x-dashboard-card>
+    @can('viewAny', \App\Models\EventType::class)
+        <x-dashboard-card :label="'Event Types'"
+                          :icon="'fa-tags'"
+                          :url="route('admin.event-types.index')">
+            Order event types, describe them, and choose which count toward troop totals
+        </x-dashboard-card>
+    @endcan
     <x-dashboard-card :label="'Awards'"
                       :icon="'fa-award'"
                       :url="route('admin.awards.list')">
@@ -177,12 +208,14 @@
                       :url="route('admin.reports.display')">
         View Reports &amp; Statistics
     </x-dashboard-card>
-    @role(['administrator'])
+    @role(['administrator', 'staff_officer'])
     <x-dashboard-card :label="'FAQ & Help'"
                       :icon="'fa-question'"
                       :url="route('admin.faq.index')">
         View Frequently Asked Questions and Help
     </x-dashboard-card>
+    @endrole
+    @role(['administrator'])
     <x-dashboard-card :label="'System Check'"
                       :icon="'fa-heart-pulse'"
                       :url="route('admin.system-check')">

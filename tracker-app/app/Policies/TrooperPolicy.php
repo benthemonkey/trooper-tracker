@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
+use App\Enums\MembershipRole;
 use App\Enums\MembershipStatus;
 use App\Models\Trooper;
 use App\Policies\Concerns\HasTrooperPermissionsTrait;
@@ -67,14 +68,33 @@ class TrooperPolicy
 
     /**
      * Determine whether the user can update a trooper's authority/role.
+     * Staff officers may not change an Administrator's role.
      *
      * @param  Trooper  $trooper  The authenticated user performing the action.
      * @param  Trooper  $subject  The trooper whose authority is being updated.
-     * @return bool True if the user is an administrator, false otherwise.
+     * @return bool True if the user is an administrator or staff officer allowed to edit the subject.
      */
     public function updateAuthority(Trooper $trooper, Trooper $subject): bool
     {
-        return $this->isAdministrator($trooper);
+        if (!$this->isAdministrator($trooper))
+        {
+            return false;
+        }
+
+        return $this->canChangeAccount($trooper, $subject);
+    }
+
+    /**
+     * Determine whether the user can change a trooper's profile, email, or status.
+     * Only an Administrator may change another Administrator's account.
+     *
+     * @param  Trooper  $trooper  The authenticated user performing the action.
+     * @param  Trooper  $subject  The trooper whose account is being changed.
+     */
+    public function updateProfile(Trooper $trooper, Trooper $subject): bool
+    {
+        return $this->canModerate($trooper, $subject)
+            && $this->canChangeAccount($trooper, $subject);
     }
 
     /**
@@ -144,6 +164,7 @@ class TrooperPolicy
     public function markRip(Trooper $trooper, Trooper $subject): bool
     {
         return $this->isAdministrator($trooper)
+            && $this->canChangeAccount($trooper, $subject)
             && $subject->membership_status !== MembershipStatus::DEPARTED;
     }
 
@@ -157,7 +178,18 @@ class TrooperPolicy
     public function unmarkRip(Trooper $trooper, Trooper $subject): bool
     {
         return $this->isAdministrator($trooper)
+            && $this->canChangeAccount($trooper, $subject)
             && $subject->membership_status === MembershipStatus::DEPARTED;
+    }
+
+    /**
+     * Determine whether the user can flag a trooper as "do not trust" or clear the flag.
+     * Only administrators can, and never on their own account.
+     */
+    public function markUntrusted(Trooper $trooper, Trooper $subject): bool
+    {
+        return $this->isAdministrator($trooper)
+            && $trooper->id !== $subject->id;
     }
 
     /**
@@ -170,6 +202,7 @@ class TrooperPolicy
     public function void(Trooper $trooper, Trooper $subject): bool
     {
         return $this->isAdministrator($trooper)
+            && $this->canChangeAccount($trooper, $subject)
             && $subject->membership_status !== MembershipStatus::INVALID;
     }
 
@@ -183,6 +216,7 @@ class TrooperPolicy
     public function unvoid(Trooper $trooper, Trooper $subject): bool
     {
         return $this->isAdministrator($trooper)
+            && $this->canChangeAccount($trooper, $subject)
             && $subject->membership_status === MembershipStatus::INVALID;
     }
 
@@ -228,5 +262,15 @@ class TrooperPolicy
         return Trooper::moderatedBy($trooper)
             ->where(Trooper::ID, $subject->id)
             ->exists();
+    }
+
+    /**
+     * Only an Administrator may change an Administrator's account, so a staff officer or
+     * moderator cannot lock one out or take over their email.
+     */
+    private function canChangeAccount(Trooper $trooper, Trooper $subject): bool
+    {
+        return $trooper->has_system_owner
+            || $subject->membership_role !== MembershipRole::ADMINISTRATOR;
     }
 }

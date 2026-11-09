@@ -247,6 +247,7 @@ Controllers that render pages extend `PageController`, which provides the breadc
 | Pivot tables | Alphabetized singular names | `event_trooper` |
 | Timestamps | `created_at`, `updated_at` | Standard Eloquent |
 | Soft deletes | `deleted_at` | SoftDeletes trait |
+| Plugin tables | `tt_<core entity>_<plugin>[_<things>]` (see `docs/PLUGINS.md`) | `tt_organization_google_sheets`, `tt_trooper_holonet_links` |
 
 After any schema change, regenerate base models:
 ```bash
@@ -347,7 +348,7 @@ npm run build    # Production build
 
 All enums are backed strings using `HasEnumHelpers`:
 - `AchievementType`, `AwardFrequency`, `EventStatus`, `EventTrooperStatus`, `EventType`
-- `MembershipRole` (`member`, `moderator`, `administrator`)
+- `MembershipRole` (`member`, `handler`, `visitor`, `moderator`, `staff_officer`, `administrator`); `staff_officer` is an administrator without Plugins, System Check, or Merge (`is_administrator` vs `has_system_owner`)
 - `MembershipStatus` (`pending`, `active`, `retired`)
 - `NoticeType`, `NotificationFrequency`, `OrganizationType`, `TrooperTheme`
 
