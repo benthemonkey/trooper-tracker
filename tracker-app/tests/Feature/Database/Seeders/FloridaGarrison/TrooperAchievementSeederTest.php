@@ -125,14 +125,14 @@ class TrooperAchievementSeederTest extends TestCase
         Trooper $trooper,
         Carbon $starts_at,
         array $shift_attributes = [],
-        string $type = 'regular',
+        ?int $event_type_id = null,
     ): void {
         $organization = Organization::factory()->create();
 
         $event = Event::factory()
             ->withOrganization($organization)
             ->create([
-                Event::TYPE => $type,
+                Event::EVENT_TYPE_ID => $event_type_id,
                 Event::STATUS => EventStatus::CLOSED,
                 Event::EVENT_START => $starts_at,
                 Event::EVENT_END => $starts_at->copy()->addHours(2),
@@ -160,8 +160,8 @@ class TrooperAchievementSeederTest extends TestCase
         $uncounted = EventType::factory()->uncounted()->create();
 
         $this->createAttendedTroop($trooper, Carbon::parse('2026-01-10 10:00:00'), [EventShift::CHARITY_HOURS => 3]);
-        $this->createAttendedTroop($trooper, Carbon::parse('2026-01-11 10:00:00'), [EventShift::CHARITY_HOURS => 3], $uncounted->slug);
-        $this->createAttendedTroop($other, Carbon::parse('2026-01-11 10:00:00'), [], $uncounted->slug);
+        $this->createAttendedTroop($trooper, Carbon::parse('2026-01-11 10:00:00'), [EventShift::CHARITY_HOURS => 3], $uncounted->id);
+        $this->createAttendedTroop($other, Carbon::parse('2026-01-11 10:00:00'), [], $uncounted->id);
 
         (new TrooperAchievementSeeder())->run();
 
