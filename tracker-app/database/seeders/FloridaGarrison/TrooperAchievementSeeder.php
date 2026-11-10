@@ -144,7 +144,7 @@ class TrooperAchievementSeeder extends Seeder
 
         $event_troopers = EventTrooper::query()
             ->select([EventTrooper::ID, EventTrooper::TROOPER_ID, EventTrooper::EVENT_SHIFT_ID])
-            ->with('event_shift.event')
+            ->with('event_shift.event.event_type')
             ->where(EventTrooper::STATUS, EventTrooperStatus::ATTENDED)
             ->whereHas('event_shift', fn ($q) => $q->where(EventShift::STATUS, EventStatus::CLOSED))
             ->whereHas('event_shift.event', fn ($q) => $q->where(Event::STATUS, EventStatus::CLOSED))
@@ -168,7 +168,9 @@ class TrooperAchievementSeeder extends Seeder
                 $trooper['total_hours'] += $shift->effective_charity_hours;
             }
 
-            if ($event_end !== null)
+            //  same rule as RecalculateTrooperRank: events of a type that doesn't count are
+            //  left out of troop counts and milestones, but their charity still counts
+            if ($event_end !== null && $shift->event->isCounted())
             {
                 $counted_at = $shift->shift_starts_at->max($event_end);
 

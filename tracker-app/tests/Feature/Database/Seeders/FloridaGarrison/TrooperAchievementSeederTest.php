@@ -9,6 +9,7 @@ use App\Enums\EventStatus;
 use App\Models\Event;
 use App\Models\EventShift;
 use App\Models\EventTrooper;
+use App\Models\EventType;
 use App\Models\Organization;
 use App\Models\Trooper;
 use App\Models\TrooperAchievement;
@@ -120,13 +121,18 @@ class TrooperAchievementSeederTest extends TestCase
     /**
      * @param  array<string, mixed>  $shift_attributes
      */
-    private function createAttendedTroop(Trooper $trooper, Carbon $starts_at, array $shift_attributes = []): void
-    {
+    private function createAttendedTroop(
+        Trooper $trooper,
+        Carbon $starts_at,
+        array $shift_attributes = [],
+        string $type = 'regular',
+    ): void {
         $organization = Organization::factory()->create();
 
         $event = Event::factory()
             ->withOrganization($organization)
             ->create([
+                Event::TYPE => $type,
                 Event::STATUS => EventStatus::CLOSED,
                 Event::EVENT_START => $starts_at,
                 Event::EVENT_END => $starts_at->copy()->addHours(2),
@@ -145,6 +151,27 @@ class TrooperAchievementSeederTest extends TestCase
             ->forEventShift($shift)
             ->asAttended()
             ->create();
+    }
+
+    public function test_run_leaves_events_that_do_not_count_out_of_the_troop_count(): void
+    {
+        $trooper = Trooper::factory()->create();
+        $other = Trooper::factory()->create();
+        $uncounted = EventType::factory()->uncounted()->create();
+
+        $this->createAttendedTroop($trooper, Carbon::parse('2026-01-10 10:00:00'), [EventShift::CHARITY_HOURS => 3]);
+        $this->createAttendedTroop($trooper, Carbon::parse('2026-01-11 10:00:00'), [EventShift::CHARITY_HOURS => 3], $uncounted->slug);
+        $this->createAttendedTroop($other, Carbon::parse('2026-01-11 10:00:00'), [], $uncounted->slug);
+
+        (new TrooperAchievementSeeder())->run();
+
+        $this->assertAchievementValue($trooper, AchievementType::TROOPER_SHIFTS, 1);
+        $this->assertAchievementValue($trooper, AchievementType::VOLUNTEER_HOURS, 6);
+        $this->assertAchievementValue($other, AchievementType::TROOPER_SHIFTS, 0);
+        $this->assertDatabaseMissing('tt_trooper_achievements', [
+            TrooperAchievement::TROOPER_ID => $other->id,
+            TrooperAchievement::TYPE => AchievementType::FIRST_TROOP->value,
+        ]);
     }
 
     private function assertAchievementValue(Trooper $trooper, AchievementType $type, mixed $value): void
