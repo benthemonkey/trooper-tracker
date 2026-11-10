@@ -17,16 +17,16 @@ class EventTypeSeederTest extends TestCase
     {
         $this->seed(EventTypeSeeder::class);
 
-        $not_counted = EventType::where(EventType::IS_COUNTED, false)->orderBy(EventType::SLUG)->pluck(EventType::SLUG);
+        $not_counted = EventType::where(EventType::IS_COUNTED, false)->orderBy(EventType::NAME)->pluck(EventType::NAME);
 
-        $this->assertSame(['armorparty', 'socialevent', 'virtualtroop'], $not_counted->all());
+        $this->assertSame(['Armor Party', 'Social Event', 'Virtual Troop'], $not_counted->all());
     }
 
     public function test_social_event_is_offered_in_alphabetical_place(): void
     {
         $this->seed(EventTypeSeeder::class);
 
-        $social = EventType::where(EventType::SLUG, 'socialevent')->firstOrFail();
+        $social = EventType::where(EventType::NAME, 'Social Event')->firstOrFail();
         $this->assertSame('Social Event', $social->name);
         $this->assertTrue($social->is_active);
 
@@ -42,7 +42,7 @@ class EventTypeSeederTest extends TestCase
         $this->seed(EventTypeSeeder::class);
         $this->seed(EventTypeSeeder::class);
 
-        $this->assertSame(1, EventType::where(EventType::SLUG, 'socialevent')->count());
+        $this->assertSame(1, EventType::where(EventType::NAME, 'Social Event')->count());
         $this->assertSame(
             EventType::count(),
             EventType::distinct()->count(EventType::SORT_ORDER),
@@ -53,9 +53,9 @@ class EventTypeSeederTest extends TestCase
     {
         $this->seed(EventTypeSeeder::class);
 
-        $hidden = EventType::where(EventType::IS_ACTIVE, false)->orderBy(EventType::SLUG)->pluck(EventType::SLUG);
+        $hidden = EventType::where(EventType::IS_ACTIVE, false)->orderBy(EventType::NAME)->pluck(EventType::NAME);
 
-        $this->assertSame(['disney', 'lucasfilm'], $hidden->all());
+        $this->assertSame(['Disney', 'Lucas Film Limited'], $hidden->all());
     }
 
     public function test_convention_is_kept_for_the_major_cons(): void
@@ -64,11 +64,11 @@ class EventTypeSeederTest extends TestCase
 
         $this->assertSame(
             'Reserved for major cons like C2E2 / FanFest.',
-            EventType::where(EventType::SLUG, 'convention')->value(EventType::DESCRIPTION),
+            EventType::where(EventType::NAME, 'Convention')->value(EventType::DESCRIPTION),
         );
         $this->assertSame(
             'Standard costuming event.',
-            EventType::where(EventType::SLUG, 'regular')->value(EventType::DESCRIPTION),
+            EventType::where(EventType::NAME, 'Regular')->value(EventType::DESCRIPTION),
         );
     }
 }
