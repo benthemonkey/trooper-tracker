@@ -807,52 +807,6 @@ class SignUpUpdateHtmxControllerTest extends TestCase
         ]);
     }
 
-    public function test_invoke_rejects_tentative_inside_cutoff(): void
-    {
-        config(['tracker.tentative_cutoff_days' => 7]);
-
-        $event_trooper = $this->createGoingOwnSignUp(now()->addDays(3));
-
-        $response = $this->actingAs($event_trooper->trooper)->post(
-            route('events.signup-update-htmx', ['event_trooper' => $event_trooper->id]),
-            ['status' => EventTrooperStatus::TENTATIVE->value]
-        );
-
-        $response->assertOk();
-        $response->assertHeader('X-Flash-Message');
-        $this->assertSame(EventTrooperStatus::GOING, $event_trooper->refresh()->status);
-    }
-
-    public function test_invoke_allows_tentative_outside_cutoff(): void
-    {
-        config(['tracker.tentative_cutoff_days' => 7]);
-
-        $event_trooper = $this->createGoingOwnSignUp(now()->addDays(10));
-
-        $response = $this->actingAs($event_trooper->trooper)->post(
-            route('events.signup-update-htmx', ['event_trooper' => $event_trooper->id]),
-            ['status' => EventTrooperStatus::TENTATIVE->value]
-        );
-
-        $response->assertOk();
-        $response->assertHeaderMissing('X-Flash-Message');
-        $this->assertSame(EventTrooperStatus::TENTATIVE, $event_trooper->refresh()->status);
-    }
-
-    public function test_invoke_allows_tentative_close_to_event_without_cutoff(): void
-    {
-        config(['tracker.tentative_cutoff_days' => null]);
-
-        $event_trooper = $this->createGoingOwnSignUp(now()->addDays(1));
-
-        $this->actingAs($event_trooper->trooper)->post(
-            route('events.signup-update-htmx', ['event_trooper' => $event_trooper->id]),
-            ['status' => EventTrooperStatus::TENTATIVE->value]
-        );
-
-        $this->assertSame(EventTrooperStatus::TENTATIVE, $event_trooper->refresh()->status);
-    }
-
     /**
      * @return array<string, array{EventTrooperStatus}>
      */
@@ -930,6 +884,59 @@ class SignUpUpdateHtmxControllerTest extends TestCase
         }
     }
 
+    public function test_invoke_refuses_tentative_inside_the_cutoff(): void
+    {
+        config(['tracker.tentative_cutoff_days' => '7']);
+        [$trooper, $event_trooper] = $this->goingTrooperOnEventStarting(now()->addDays(3));
+
+        $response = $this->actingAs($trooper)->post(route('events.signup-update-htmx', ['event_trooper' => $event_trooper->id]), [
+            'status' => EventTrooperStatus::TENTATIVE->value,
+        ]);
+
+        $response->assertOk();
+        $response->assertHeader('X-Flash-Message');
+        $this->assertSame(EventTrooperStatus::GOING, $event_trooper->fresh()->status);
+    }
+
+    public function test_invoke_allows_tentative_before_the_cutoff(): void
+    {
+        config(['tracker.tentative_cutoff_days' => '7']);
+        [$trooper, $event_trooper] = $this->goingTrooperOnEventStarting(now()->addDays(10));
+
+        $response = $this->actingAs($trooper)->post(route('events.signup-update-htmx', ['event_trooper' => $event_trooper->id]), [
+            'status' => EventTrooperStatus::TENTATIVE->value,
+        ]);
+
+        $response->assertOk();
+        $response->assertHeaderMissing('X-Flash-Message');
+        $this->assertSame(EventTrooperStatus::TENTATIVE, $event_trooper->fresh()->status);
+    }
+
+    public function test_invoke_allows_tentative_up_to_the_event_without_a_cutoff(): void
+    {
+        config(['tracker.tentative_cutoff_days' => null]);
+        [$trooper, $event_trooper] = $this->goingTrooperOnEventStarting(now()->addDay());
+
+        $this->actingAs($trooper)->post(route('events.signup-update-htmx', ['event_trooper' => $event_trooper->id]), [
+            'status' => EventTrooperStatus::TENTATIVE->value,
+        ]);
+
+        $this->assertSame(EventTrooperStatus::TENTATIVE, $event_trooper->fresh()->status);
+    }
+
+    public function test_invoke_lets_a_tentative_trooper_inside_the_cutoff_commit_or_cancel(): void
+    {
+        config(['tracker.tentative_cutoff_days' => '7']);
+        [$trooper, $event_trooper] = $this->goingTrooperOnEventStarting(now()->addDays(3));
+        $event_trooper->update([EventTrooper::STATUS => EventTrooperStatus::TENTATIVE]);
+
+        $this->actingAs($trooper)->post(route('events.signup-update-htmx', ['event_trooper' => $event_trooper->id]), [
+            'status' => EventTrooperStatus::GOING->value,
+        ])->assertHeaderMissing('X-Flash-Message');
+
+        $this->assertSame(EventTrooperStatus::GOING, $event_trooper->fresh()->status);
+    }
+
     public function test_invoke_lets_a_moderator_reject_on_a_manual_selection_event(): void
     {
         [$trooper, $event_trooper] = $this->goingTrooper();
@@ -965,27 +972,21 @@ class SignUpUpdateHtmxControllerTest extends TestCase
         return [$trooper, $event_trooper];
     }
 
-    private function createGoingOwnSignUp(?DateTimeInterface $starts_at = null): EventTrooper
+    /**
+     * @return array{Trooper, EventTrooper}
+     */
+    private function goingTrooperOnEventStarting(DateTimeInterface $starts_at): array
     {
-        $trooper = Trooper::factory()->asActive()->withVerifiedEmail()->create();
-        $organization = Organization::factory()->create();
-        TrooperAssignment::factory()->forTrooper($trooper)->forOrganization($organization)->asMember()->create();
+        [$trooper, $event_trooper] = $this->goingTrooper();
 
-        $starts_at ??= now()->addDays(14);
-
-        $event = Event::factory()->withOrganization($organization)->create([
+        $event_trooper->event_shift->event->update([
             Event::EVENT_START => $starts_at,
             Event::EVENT_END => (clone $starts_at)->modify('+4 hours'),
+            Event::TENTATIVE_SIGNUPS_ALLOWED => true,
             Event::TROOPERS_ALLOWED => null,
             Event::HANDLERS_ALLOWED => null,
-            Event::TENTATIVE_SIGNUPS_ALLOWED => true,
         ]);
-        $event_shift = EventShift::factory()->forEvent($event)->create();
 
-        return EventTrooper::factory()
-            ->forEventShift($event_shift)
-            ->forTrooper($trooper)
-            ->asGoing()
-            ->create();
+        return [$trooper, $event_trooper];
     }
 }
