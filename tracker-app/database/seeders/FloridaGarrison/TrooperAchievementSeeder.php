@@ -71,8 +71,8 @@ class TrooperAchievementSeeder extends Seeder
                 AchievementType::TROOPER_RANK->value => $rank++,
                 AchievementType::TROOPER_SHIFTS->value => $event_count,
                 AchievementType::VOLUNTEER_HOURS->value => $trooper['total_hours'],
-                AchievementType::DIRECT_FUNDS->value => $trooper['total_direct'],
-                AchievementType::INDIRECT_FUNDS->value => $trooper['total_indirect'],
+                AchievementType::DIRECT_FUNDS->value => round($trooper['total_direct'], 2),
+                AchievementType::INDIRECT_FUNDS->value => round($trooper['total_indirect'], 2),
             ];
 
             foreach ($values as $type => $value)
@@ -131,7 +131,7 @@ class TrooperAchievementSeeder extends Seeder
      * A troop counts at a range end once both its shift has started and its event has ended
      * by then; hours and funds only need the shift to have started.
      *
-     * @return array<int, array{id: int, counted_at: list<Carbon>, total_hours: int, total_direct: int, total_indirect: int}>
+     * @return array<int, array{id: int, counted_at: list<Carbon>, total_hours: int, total_direct: int|float, total_indirect: int|float}>
      */
     private function collectTroopers(Carbon $final_end): array
     {
