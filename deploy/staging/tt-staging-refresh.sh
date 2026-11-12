@@ -139,6 +139,13 @@ idle_artisan db:seed --class="$SEEDER" --force
 log "enable xenforo plugin"
 idle_artisan plugins:enable xenforo
 idle_artisan db:seed --class="$FORUM_SEEDER" --force
+#   Sentry only where .env has a DSN: the server, not the local rehearsal. If its Composer package
+#   isn't installed yet it waits, and the next tt-staging-update.sh installs it and turns it on.
+if [ -n "$(env_value SENTRY_DSN)$(env_value SENTRY_BROWSER_DSN)" ]
+then
+    log "enable sentry plugin"
+    idle_artisan plugins:enable sentry
+fi
 checkpoint seed
 
 log "check counts"

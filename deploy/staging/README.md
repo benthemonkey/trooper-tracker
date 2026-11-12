@@ -61,7 +61,11 @@ public/build/.commit`), tar it as `build/...`, copy it to the server, then:
     ~/trooper-tracker/deploy/staging/tt-staging-update.sh ~/tt-build.tar.gz [--refresh]
 
 It pulls, runs `composer install`, swaps in the build, migrates the live staging DB, clears caches
-and restarts the queue. It warns if the front end changed since the build it is serving.
+and restarts the queue. When `.env` has `SENTRY_DSN` or `SENTRY_BROWSER_DSN`, the Composer step
+uses upstream's plugin deploy tooling (`tracker-app/bin/plugin-packages.sh`) instead, so the
+Sentry plugin's package is installed and the plugin turned on; if that package can't be
+installed, it deploys without it and says so. The nightly refresh turns the plugin on in each
+rebuilt copy when a DSN is set. The local rehearsal has no DSN, so Sentry stays off there. It warns if the front end changed since the build it is serving.
 `--refresh` also rebuilds the data now. To roll back: `git checkout <sha>`, then run it with
 `TT_NO_PULL=1` and a build of that commit. Midwest's workspace has `deploy-staging.sh`, which does
 all of it from Windows.

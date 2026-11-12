@@ -33,6 +33,40 @@ FRONT_END_PATHS=(tracker-app/resources tracker-app/package.json tracker-app/pack
 say() { printf '==> %s\n' "$*"; }
 die() { printf 'tt-staging-update failed: %s\n' "$*" >&2; exit 1; }
 
+# Sentry is on where .env has a DSN: the server, not the local rehearsal (tt-staging-refresh.sh
+# turns it on in each rebuilt copy). Run from tracker-app.
+wants_sentry() { grep -qE "^SENTRY_(BROWSER_)?DSN=[\"']?[^\"' ]" .env; }
+
+# The app's packages plus the Sentry plugin's, with upstream's deploy tooling
+# (bin/plugin-packages.sh, as deploy.sh uses it): turn the plugin on in the live DB, where it
+# waits until its package is installed, save what enabled plugins need, install it all in one
+# Composer run (core packages held at composer.lock), then turn on what was waiting. If the
+# plugin package can't be installed, the site still deploys without it.
+install_with_sentry()
+{
+    local PLUGIN_DEPLOY_DIR="$PWD/storage/app/plugin-deploy" COMPOSER_BIN="$COMPOSER"
+    mkdir -p "$PLUGIN_DEPLOY_DIR"
+    export COMPOSER_MEMORY_LIMIT=1G
+
+    say "plugin packages: enable sentry, list what plugins need"
+    "$PHP" artisan config:clear --no-interaction
+    "$PHP" artisan plugins:enable sentry --no-interaction \
+        && "$PHP" artisan plugins:packages --write --no-interaction \
+        || say "WARNING: could not update the plugin package list; using the saved one"
+
+    # shellcheck source=../../tracker-app/bin/plugin-packages.sh
+    . bin/plugin-packages.sh
+    backup_plugin_packages
+    if ! install_packages
+    then
+        say "WARNING: plugin packages failed (see $PLUGIN_COMPOSER_LOG); installing without them"
+        rm -f composer.plugins.json composer.plugins.lock
+        "$PHP" -d memory_limit=1G "$COMPOSER" install --no-dev --optimize-autoloader --no-interaction --no-progress
+    fi
+
+    "$PHP" artisan plugins:reconcile --no-interaction
+}
+
 # All in a function: bash reads a script as it runs, and the git pull below can rewrite this file
 main()
 {
@@ -71,8 +105,14 @@ main()
     db=$(grep -E '^DB_DATABASE=' .env | tail -n 1 | cut -d= -f2- | tr -d "\"'")
     [[ "$db" =~ $DB_PATTERN ]] || die ".env DB_DATABASE ($db) does not match $DB_PATTERN"
 
-    say "composer install"
-    "$PHP" -d memory_limit=1G "$COMPOSER" install --no-dev --optimize-autoloader --no-interaction --no-progress
+    if wants_sentry
+    then
+        install_with_sentry
+    else
+        say "composer install"
+        rm -f composer.plugins.json composer.plugins.lock
+        "$PHP" -d memory_limit=1G "$COMPOSER" install --no-dev --optimize-autoloader --no-interaction --no-progress
+    fi
 
     if [ -n "$build" ]
     then
