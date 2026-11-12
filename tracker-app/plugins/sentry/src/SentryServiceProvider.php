@@ -17,12 +17,31 @@ use function Sentry\init;
 
 class SentryServiceProvider extends PluginServiceProvider
 {
-    /** Pinned with its integrity hash; see https://docs.sentry.io/platforms/javascript/install/loader/#cdn */
+    /**
+     * Sentry's browser bundle, served by this plugin from resources/js (see BrowserSdkController),
+     * pinned with its integrity hash. To upgrade, download
+     * https://browser.sentry-cdn.com/<version>/bundle.min.js to resources/js/browser-sdk-<version>.min.js,
+     * delete the old file and update both constants; a test checks the file against the hash.
+     */
     public const BROWSER_SDK_VERSION = '11.10.0';
 
     public const BROWSER_SDK_INTEGRITY = 'sha384-O/8YQaGGVy/n9jIUzcOiaiJVm4t5+JMNiK/zOa0fWvlSld+FquXemEcwJxQ3x/Lr';
 
     public const TUNNEL_PATH = '/webhooks/sentry';
+
+    public static function browserSdkFile(): string
+    {
+        return dirname(__DIR__).'/resources/js/browser-sdk-'.self::BROWSER_SDK_VERSION.'.min.js';
+    }
+
+    /**
+     * Ad-block lists block Sentry's CDN and paths such as /sentry/bundle.min.js or
+     * /sentry-browser.min.js, so the file gets a neutral name on the tracker's own site.
+     */
+    public static function browserSdkPath(): string
+    {
+        return '/plugins/sentry/browser-sdk-'.self::BROWSER_SDK_VERSION.'.js';
+    }
 
     protected function registerPlugin(): void
     {

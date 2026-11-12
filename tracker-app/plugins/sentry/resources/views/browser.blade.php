@@ -1,7 +1,7 @@
 @php
     use TroopTracker\Plugins\Sentry\SentryServiceProvider;
 @endphp
-<script src="https://browser.sentry-cdn.com/{{ SentryServiceProvider::BROWSER_SDK_VERSION }}/bundle.min.js"
+<script src="{{ url(SentryServiceProvider::browserSdkPath()) }}"
         integrity="{{ SentryServiceProvider::BROWSER_SDK_INTEGRITY }}"
         crossorigin="anonymous"></script>
 <script>

@@ -20,6 +20,7 @@ use Sentry\Transport\Result;
 use Sentry\Transport\ResultStatus;
 use Sentry\Transport\TransportInterface;
 use Tests\TestCase;
+use TroopTracker\Plugins\Sentry\SentryServiceProvider;
 
 class SentryPluginTest extends TestCase
 {
@@ -122,12 +123,14 @@ class SentryPluginTest extends TestCase
     {
         $this->enableSentry(['browser_dsn' => self::BROWSER_DSN]);
 
+        //  from the tracker itself: ad blockers block Sentry's CDN
         $this->get(route('auth.login'))
             ->assertOk()
-            ->assertSee('https://browser.sentry-cdn.com/11.10.0/bundle.min.js', false)
+            ->assertSee('src="'.url('/plugins/sentry/browser-sdk-11.10.0.js').'"', false)
+            ->assertDontSee('sentry-cdn.com', false)
             ->assertSee('b7a8b9c0@o1.ingest.sentry.io', false)
             ->assertSee('webhooks', false)
-            ->assertSee('sha384-', false);
+            ->assertSee(SentryServiceProvider::BROWSER_SDK_INTEGRITY, false);
     }
 
     public function test_pages_leave_the_browser_sdk_out_without_a_browser_dsn(): void
@@ -136,7 +139,27 @@ class SentryPluginTest extends TestCase
 
         $this->get(route('auth.login'))
             ->assertOk()
-            ->assertDontSee('browser.sentry-cdn.com', false);
+            ->assertDontSee(SentryServiceProvider::browserSdkPath(), false)
+            ->assertDontSee('Sentry.init', false);
+    }
+
+    public function test_the_browser_sdk_is_served_as_sentrys_exact_bundle_for_anyone(): void
+    {
+        $this->enableSentry(['browser_dsn' => self::BROWSER_DSN]);
+
+        //  logged out: the login page loads it too
+        $response = $this->get(SentryServiceProvider::browserSdkPath());
+
+        $response->assertOk()
+            ->assertHeader('Content-Type', 'text/javascript; charset=utf-8');
+        $this->assertStringContainsString('immutable', (string) $response->headers->get('Cache-Control'));
+
+        //  the browser refuses it unless it matches the integrity hash on the script tag
+        $served = $response->baseResponse->getFile()->getPathname();
+        $this->assertSame(
+            SentryServiceProvider::BROWSER_SDK_INTEGRITY,
+            'sha384-'.base64_encode(hash_file('sha384', $served, true))
+        );
     }
 
     public function test_the_tunnel_forwards_an_envelope_for_the_browser_dsn_to_its_project(): void
