@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Tests\Feature\Http\Controllers\Admin\Events;
 
 use App\Enums\EventStatus;
+use App\Enums\EventTrooperStatus;
 use App\Jobs\SendEventCreatedNotificationsJob;
 use App\Models\Event;
+use App\Models\EventShift;
+use App\Models\EventTrooper;
+use App\Models\EventUpload;
 use App\Models\EventType;
 use App\Models\Organization;
 use App\Models\Trooper;
@@ -228,6 +232,47 @@ class EventCoordinatorAccessTest extends TestCase
                 'images' => [UploadedFile::fake()->image('photo.jpg', 800, 600)],
             ])
             ->assertForbidden();
+    }
+
+    public function test_event_coordinator_can_change_nothing_on_an_event_they_didnt_create(): void
+    {
+        $others = Event::factory()->withOrganization($this->region)->create();
+        $shift = EventShift::factory()->forEvent($others)->create();
+        $sign_up = EventTrooper::factory()->forEventShift($shift)->forTrooper($this->event_coordinator)->create([
+            EventTrooper::STATUS => EventTrooperStatus::GOING,
+        ]);
+        $upload = EventUpload::factory()->create([EventUpload::EVENT_ID => $others->id]);
+        //  being picked as its coordinator gives no edit rights either
+        $others->update([Event::COORDINATOR_TROOPER_ID => $this->event_coordinator->id]);
+
+        $pages = ['update', 'shifts', 'charity', 'troopers', 'uploads', 'mission-review'];
+
+        foreach ($pages as $page)
+        {
+            $this->actingAs($this->event_coordinator)
+                ->get(route('admin.events.'.$page, ['event' => $others]))
+                ->assertForbidden();
+        }
+
+        $actions = [
+            route('admin.events.update', ['event' => $others]),
+            route('admin.events.shifts', ['event' => $others]),
+            route('admin.events.charity', ['event' => $others]),
+            route('admin.events.troopers', ['event' => $others]),
+            route('admin.events.troopers.add', ['event' => $others, 'event_shift' => $shift]),
+            route('admin.events.troopers.remove', ['event' => $others, 'event_trooper' => $sign_up]),
+            route('admin.events.shifts.stations.reorder', ['event' => $others, 'event_shift' => $shift]),
+            route('admin.events.uploads.toggle-type', ['event' => $others, 'event_upload' => $upload]),
+            route('admin.events.uploads.delete', ['event' => $others, 'event_upload' => $upload]),
+        ];
+
+        foreach ($actions as $action)
+        {
+            $this->actingAs($this->event_coordinator)->post($action)->assertForbidden();
+        }
+
+        $this->assertNotSoftDeleted($sign_up);
+        $this->assertModelExists($upload);
     }
 
     /**
