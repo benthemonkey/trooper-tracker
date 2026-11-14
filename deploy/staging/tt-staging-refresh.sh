@@ -169,7 +169,9 @@ log "troopers $troopers/$legacy_troopers, events $events/$legacy_events, shifts 
 
 [ "$legacy_troopers" -gt 0 ] && [ "$legacy_events" -gt 0 ] || fail "legacy copy is empty"
 [ "$troopers" -eq "$legacy_troopers" ] || fail "troopers: $troopers imported, $legacy_troopers in legacy"
-[ "$events" -eq "$legacy_events" ] || fail "events: $events imported, $legacy_events in legacy"
+#   under "one troop per day" a linked row on a day its event already has is imported as its own event
+[ "$events" -ge "$legacy_events" ] && [ "$events" -le "$legacy_shifts" ] \
+    || fail "events: $events imported, $legacy_events in legacy (up to $legacy_shifts with linked rows)"
 #   shifts starting at the same minute are merged into one, so a few may be missing
 [ "$shifts" -le "$legacy_shifts" ] && [ $((legacy_shifts - shifts)) -le "$SIGNUP_TOLERANCE" ] \
     || fail "shifts: $shifts imported, $legacy_shifts in legacy (tolerance $SIGNUP_TOLERANCE)"
