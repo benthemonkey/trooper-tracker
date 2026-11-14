@@ -162,6 +162,64 @@ class Event extends BaseEvent
     }
 
     /**
+     * Sign-up statuses that let a trooper be picked as the event's coordinator: going, or
+     * attended (including attendance a moderator hasn't verified yet).
+     */
+    public const COORDINATOR_STATUSES = [
+        EventTrooperStatus::GOING,
+        EventTrooperStatus::ATTENDED,
+        EventTrooperStatus::AWAITING_VERIFICATION,
+    ];
+
+    /**
+     * Who coordinates the event: the attendee picked for it, otherwise whoever created it.
+     */
+    public function eventCoordinator(): ?Trooper
+    {
+        return $this->coordinator_trooper ?? $this->created_by;
+    }
+
+    /**
+     * Troopers who can be picked as coordinator: going or attended on a shift of this event.
+     *
+     * @return Collection<int, Trooper>
+     */
+    public function coordinatorCandidates(): Collection
+    {
+        return Trooper::query()
+            ->whereHas('event_troopers', fn ($query) => $query
+                ->whereIn(EventTrooper::STATUS, self::COORDINATOR_STATUSES)
+                ->whereHas('event_shift', fn ($shift) => $shift->where(EventShift::EVENT_ID, $this->id)))
+            ->orderBy(Trooper::DISPLAY_NAME)
+            ->get();
+    }
+
+    /**
+     * Clears the picked coordinator on these events when that trooper is no longer going or
+     * attended on any of the event's shifts, so the creator coordinates again. A bulk update:
+     * no observers, notifications or forum updates.
+     *
+     * @param  iterable<int>  $event_ids
+     */
+    public static function releaseIneligibleCoordinators(iterable $event_ids): void
+    {
+        $event_ids = collect($event_ids)->filter()->unique()->values();
+
+        if ($event_ids->isEmpty())
+        {
+            return;
+        }
+
+        static::query()
+            ->whereIn(self::ID, $event_ids)
+            ->whereNotNull(self::COORDINATOR_TROOPER_ID)
+            ->whereDoesntHave('event_shifts.event_troopers', fn ($query) => $query
+                ->whereColumn('tt_event_troopers.'.EventTrooper::TROOPER_ID, 'tt_events.'.self::COORDINATOR_TROOPER_ID)
+                ->whereIn(EventTrooper::STATUS, self::COORDINATOR_STATUSES))
+            ->update([self::COORDINATOR_TROOPER_ID => null]);
+    }
+
+    /**
      * Get the primary (top-level) organization for this event.
      *
      * @return BelongsTo<Organization, self>

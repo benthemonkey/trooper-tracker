@@ -8,6 +8,7 @@ use App\Enums\FlashType;
 use App\Http\Controllers\PageController;
 use App\Models\Event;
 use App\Models\Organization;
+use App\Models\Trooper;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -60,7 +61,13 @@ class UpdateController extends PageController
             $organization->pivot = $event_organization->pivot ?? null;
         }
 
-        $data = compact('event', 'organizations');
+        //  the creator is the empty choice, not an option of their own
+        $coordinator_options = $event->coordinatorCandidates()
+            ->reject(fn (Trooper $trooper): bool => $trooper->id === $event->created_id)
+            ->pluck(Trooper::DISPLAY_NAME, Trooper::ID)
+            ->all();
+
+        $data = compact('event', 'organizations', 'coordinator_options');
 
         return view('pages.admin.events.update', $data);
     }

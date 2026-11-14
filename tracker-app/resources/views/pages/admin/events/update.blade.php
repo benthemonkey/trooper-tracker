@@ -24,6 +24,7 @@
                 </x-input-container>
 
                 @include('pages.admin.events.inc.header')
+                @include('pages.admin.events.inc.coordinator')
                 @include('pages.admin.events.inc.schedule')
                 @include('pages.admin.events.inc.location')
                 @include('pages.admin.events.inc.contact-information')
