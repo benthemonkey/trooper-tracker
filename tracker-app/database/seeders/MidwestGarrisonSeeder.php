@@ -21,6 +21,7 @@ use Database\Seeders\FloridaGarrison\TrooperOrganizationSeeder;
 use Database\Seeders\FloridaGarrison\TrooperSeeder;
 use Database\Seeders\MidwestGarrison\EventPhotoAttendeeTagSeeder;
 use Database\Seeders\MidwestGarrison\EventTypeSeeder as MidwestGarrisonEventTypeSeeder;
+use Database\Seeders\MidwestGarrison\GalacticAcademyEventSeeder;
 use Database\Seeders\MidwestGarrison\OrganizationSeeder as MidwestGarrisonOrganizationSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -93,6 +94,7 @@ class MidwestGarrisonSeeder extends Seeder
             //  before the events and milestones, so troop totals follow Midwest's types
             $this->call(MidwestGarrisonEventTypeSeeder::class);
             $this->call(EventSeeder::class);
+            $this->call(GalacticAcademyEventSeeder::class);
             $this->call(EventUploadSeeder::class);
             $this->call(EventUploadTrooperSeeder::class);
             $this->call(EventPhotoAttendeeTagSeeder::class);
