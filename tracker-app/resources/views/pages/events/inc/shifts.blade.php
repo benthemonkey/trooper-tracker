@@ -1,12 +1,23 @@
 <div class="d-flex justify-content-between align-items-center mb-2">
     <x-section-title class="mb-0">Mission Roster</x-section-title>
-    @if($can_moderate)
-        <a class="btn btn-sm btn-outline-secondary d-none d-md-inline"
-           href="{{ route('events.download-roster-csv', compact('event')) }}">
-            <i class="fa fa-fw fa-download me-1"></i>
-            Download CSV (All Shifts)
-        </a>
-    @endif
+    <div class="d-flex gap-2">
+        {{-- Midwest only, temporary: see pages/events/inc/signup-tour.blade.php --}}
+        <button type="button"
+                class="btn btn-sm btn-outline-info"
+                data-tour-replay
+                x-data
+                x-on:click="$dispatch('signup-tour:start')">
+            <i class="fa fa-fw fa-circle-question me-1"></i>
+            How sign-up works
+        </button>
+        @if($can_moderate)
+            <a class="btn btn-sm btn-outline-secondary d-none d-md-inline"
+               href="{{ route('events.download-roster-csv', compact('event')) }}">
+                <i class="fa fa-fw fa-download me-1"></i>
+                Download CSV (All Shifts)
+            </a>
+        @endif
+    </div>
 </div>
 
 {{-- again where troopers sign up, so nobody signs up without seeing it --}}
@@ -23,6 +34,8 @@
         </div>
     </div>
 @endif
+{{-- Midwest only, temporary: see the file itself --}}
+@include('pages.events.inc.signup-tour', compact('event'))
 @foreach($event->event_shifts as $event_shift)
     @include('pages.events.inc.shift-container', compact('event_shift', 'event', 'count_of_shifts'))
 @endforeach
