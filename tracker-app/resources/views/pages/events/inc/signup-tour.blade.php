@@ -18,8 +18,6 @@
 <div x-data="signUpTour({ autoStart: @js($tour_auto_start), storageKey: @js('tt.signupTourSeen.' . Auth::id()) })"
      x-on:signup-tour:start.window="start()"
      x-on:keydown.escape.window="active && end()"
-     x-on:scroll.window.passive="active && reposition()"
-     x-on:resize.window="active && reposition()"
      data-signup-tour
      data-autostart="{{ $tour_auto_start ? 'true' : 'false' }}">
 
@@ -176,12 +174,15 @@
         You can watch this again any time with this button.
     </template>
 
-    {{-- the dimmed page with a hole around the step's target, and the step's card --}}
-    <div class="signup-tour-spotlight"
-         x-show="active"
-         x-cloak
-         x-bind:class="spot ? '' : 'signup-tour-spotlight--none'"
-         x-bind:style="spotStyle"></div>
+    {{-- the dimmed page with a hole around the step's target, and the step's card. The hole is
+         placed in page coordinates under <body>, so it scrolls with the page instead of chasing it. --}}
+    <template x-teleport="body">
+        <div class="signup-tour-spotlight"
+             x-show="active"
+             x-cloak
+             x-bind:class="spot ? '' : 'signup-tour-spotlight--none'"
+             x-bind:style="spotStyle"></div>
+    </template>
     <div class="card shadow-lg signup-tour-card"
          x-show="active"
          x-cloak
@@ -227,15 +228,17 @@
     @push('scripts')
         <style>
             .signup-tour-example { border-style: dashed; }
+            /* absolute in page coordinates: the browser scrolls it with the content. The shadow
+               dims everything around the hole, however far the page scrolls. */
             .signup-tour-spotlight {
-                position: fixed;
+                position: absolute;
                 z-index: 1075;
                 pointer-events: none;
                 border-radius: .5rem;
-                box-shadow: 0 0 0 3px var(--bs-warning), 0 0 0 200vmax rgba(0, 0, 0, .6);
-                transition: top .2s, left .2s, width .2s, height .2s;
+                box-shadow: 0 0 0 3px var(--bs-warning), 0 0 0 100000px rgba(0, 0, 0, .6);
+                transition: top .35s ease, left .35s ease, width .35s ease, height .35s ease;
             }
-            .signup-tour-spotlight--none { box-shadow: 0 0 0 200vmax rgba(0, 0, 0, .6); }
+            .signup-tour-spotlight--none { box-shadow: 0 0 0 100000px rgba(0, 0, 0, .6); }
             .signup-tour-card {
                 position: fixed;
                 z-index: 1080;
@@ -264,6 +267,7 @@
                     steps: [],
                     index: 0,
                     spot: null,
+                    layout: null,
 
                     init() {
                         let seen = false;
@@ -276,8 +280,9 @@
                     get step() { return this.steps[this.index] ?? null; },
                     get isLast() { return this.index === this.steps.length - 1; },
 
+                    //  page coordinates; with no target, a zero-size hole mid-screen just dims the page
                     get spotStyle() {
-                        const s = this.spot ?? { top: innerHeight / 2, left: innerWidth / 2, width: 0, height: 0 };
+                        const s = this.spot ?? { top: scrollY + innerHeight / 2, left: scrollX + innerWidth / 2, width: 0, height: 0 };
                         return `top:${s.top}px;left:${s.left}px;width:${s.width}px;height:${s.height}px`;
                     },
 
@@ -297,6 +302,9 @@
                             .filter((s) => s.unless === null || !find(s.unless));
                         this.show(0);
                         this.$nextTick(() => this.$refs.next?.focus());
+                        //  content loading above the target moves it down the page
+                        this.layout = new ResizeObserver(() => this.reposition());
+                        this.layout.observe(document.body);
                     },
 
                     targetEl() {
@@ -313,15 +321,20 @@
                             scrollTo({ top: Math.max(0, top), behavior: smooth ? 'smooth' : 'auto' });
                         }
                         this.reposition();
-                        setTimeout(() => this.reposition(), 450);
                     },
 
+                    //  in page coordinates, so scrolling never moves it; only a new step or a resize does
                     reposition() {
                         const el = this.targetEl();
                         if (!el) { this.spot = null; return; }
                         const r = el.getBoundingClientRect();
                         const pad = 6;
-                        this.spot = { top: r.top - pad, left: r.left - pad, width: r.width + pad * 2, height: r.height + pad * 2 };
+                        this.spot = {
+                            top: r.top + scrollY - pad,
+                            left: r.left + scrollX - pad,
+                            width: r.width + pad * 2,
+                            height: r.height + pad * 2,
+                        };
                     },
 
                     next() { this.isLast ? this.end() : this.show(this.index + 1); },
@@ -330,6 +343,7 @@
                     end() {
                         this.active = false;
                         this.spot = null;
+                        this.layout?.disconnect();
                         try { localStorage.setItem(storageKey, new Date().toISOString()); } catch (e) {}
                     },
                 };
