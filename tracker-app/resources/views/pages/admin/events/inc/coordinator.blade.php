@@ -4,8 +4,8 @@
        picked: @js((string) old('coordinator_trooper_id', $event->coordinator_trooper_id ?? '')),
        saved: @js((string) ($event->coordinator_trooper_id ?? '')),
        below: @js($coordinator_below_role),
-       get warn() { return this.below.includes(this.picked); },
-       get name() { return [...this.$refs.picker.options].find((o) => o.value === this.picked)?.text.trim() ?? ''; },
+       get warn() { return Object.hasOwn(this.below, this.picked); },
+       get name() { return this.below[this.picked] ?? ''; },
      }"
      {{-- capture runs before the form's own submit handler, which would otherwise lock the
           Save button even after Cancel --}}
@@ -19,9 +19,8 @@
     <x-input-select :property="'coordinator_trooper_id'"
                     :options="$coordinator_options"
                     :value="$event->coordinator_trooper_id"
-                    :placeholder="($event->created_by?->display_name ?? 'The event\'s creator') . ' (created the event)'"
-                    x-model="picked"
-                    x-ref="picker" />
+                    :placeholder="$coordinator_creator . ' (created the event)'"
+                    x-model="picked" />
     <div class="alert alert-warning mt-2 mb-0"
          role="alert"
          x-show="warn"

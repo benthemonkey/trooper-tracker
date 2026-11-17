@@ -63,16 +63,22 @@ class UpdateController extends PageController
 
         //  the creator is the empty choice, not an option of their own
         $candidates = $event->coordinatorCandidates()
-            ->reject(fn (Trooper $trooper): bool => $trooper->id === $event->created_id);
+            ->reject(fn (Trooper $trooper): bool => $trooper->id === $event->created_id)
+            ->sortBy(fn (Trooper $trooper): string => mb_strtolower($this->coordinatorLabel($trooper)));
 
-        $coordinator_options = $candidates->pluck(Trooper::DISPLAY_NAME, Trooper::ID)->all();
+        $coordinator_options = $candidates
+            ->mapWithKeys(fn (Trooper $trooper): array => [$trooper->id => $this->coordinatorLabel($trooper)])
+            ->all();
+
+        $coordinator_creator = $event->created_by
+            ? $this->coordinatorLabel($event->created_by)
+            : "The event's creator";
 
         //  picking one of these lets someone below event coordinator edit the event: the page
-        //  warns and asks to confirm
+        //  warns and asks to confirm, naming them (trooper id => name)
         $coordinator_below_role = $candidates
             ->reject(fn (Trooper $trooper): bool => $trooper->membership_role->managesEvents())
-            ->map(fn (Trooper $trooper): string => (string) $trooper->id)
-            ->values()
+            ->mapWithKeys(fn (Trooper $trooper): array => [$trooper->id => $trooper->legal_name ?: $trooper->display_name])
             ->all();
 
         //  a coordinator who can't host for the event's organization can't move it either
@@ -80,8 +86,21 @@ class UpdateController extends PageController
             ->where(Organization::ID, $event->organization_id)
             ->exists();
 
-        $data = compact('event', 'organizations', 'coordinator_options', 'coordinator_below_role', 'can_change_host');
+        $data = compact('event', 'organizations', 'coordinator_options', 'coordinator_creator', 'coordinator_below_role', 'can_change_host');
 
         return view('pages.admin.events.update', $data);
+    }
+
+    /**
+     * The trooper's name with their username after it, as the Troopers tab shows both;
+     * just the username when no name is on file (or it's the same).
+     */
+    private function coordinatorLabel(Trooper $trooper): string
+    {
+        $name = trim((string) $trooper->legal_name);
+
+        return $name === '' || $name === $trooper->display_name
+            ? $trooper->display_name
+            : "{$name} ({$trooper->display_name})";
     }
 }

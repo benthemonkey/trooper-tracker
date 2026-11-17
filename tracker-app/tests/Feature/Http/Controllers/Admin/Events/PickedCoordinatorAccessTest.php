@@ -209,7 +209,7 @@ class PickedCoordinatorAccessTest extends TestCase
         $this->actingAs($moderator)
             ->get(route('admin.events.update', ['event' => $this->event]))
             ->assertOk()
-            ->assertViewHas('coordinator_below_role', [(string) $this->member->id])
+            ->assertViewHas('coordinator_below_role', [$this->member->id => $this->member->legal_name])
             ->assertSee("isn't an event coordinator", false);
     }
 

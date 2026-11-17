@@ -30,20 +30,31 @@ class UpdateControllerTest extends TestCase
     public function test_invoke_offers_attendees_going_or_attended_as_coordinator(): void
     {
         $admin = Trooper::factory()->asSystemOwner()->create();
-        $creator = Trooper::factory()->withDisplayName('TK-421 Creator')->create();
+        $creator = Trooper::factory()->withDisplayName('TK-421 Creator')->withLegalName('Carla Creator')->create();
         $event = Event::factory()->withCreatedByTrooper($creator)->create();
         $shift = EventShift::factory()->forEvent($event)->create();
-        foreach (['TK-422 Going' => EventTrooperStatus::GOING, 'TK-423 Tentative' => EventTrooperStatus::TENTATIVE] as $name => $status)
+        $attendees = [
+            ['TK-422 Going', 'Zoe Going', EventTrooperStatus::GOING],
+            ['TK-424 Nameless', '', EventTrooperStatus::GOING],
+            ['TK-423 Tentative', 'Tina Tentative', EventTrooperStatus::TENTATIVE],
+        ];
+        foreach ($attendees as [$display_name, $legal_name, $status])
         {
             EventTrooper::factory()->forEventShift($shift)
-                ->forTrooper(Trooper::factory()->withDisplayName($name)->create())
+                ->forTrooper(Trooper::factory()->withDisplayName($display_name)->withLegalName($legal_name)->create())
                 ->create([EventTrooper::STATUS => $status]);
         }
 
         $response = $this->actingAs($admin)->get(route('admin.events.update', ['event' => $event->id]));
 
+        //  name (username), sorted by what's shown; just the username when there's no name
         $response->assertOk();
-        $response->assertSeeInOrder(['Event Coordinator', 'TK-421 Creator (created the event)', 'TK-422 Going']);
+        $response->assertSeeInOrder([
+            'Event Coordinator',
+            'Carla Creator (TK-421 Creator) (created the event)',
+            'TK-424 Nameless',
+            'Zoe Going (TK-422 Going)',
+        ]);
         $response->assertDontSee('TK-423 Tentative');
     }
 
