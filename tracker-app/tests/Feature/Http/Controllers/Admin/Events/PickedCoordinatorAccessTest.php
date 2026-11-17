@@ -19,7 +19,8 @@ use Tests\TestCase;
 
 /**
  * A trooper picked as an event's coordinator can run that event whatever their role, and
- * nothing more: no other events, no events list, no creating or copying events.
+ * finds it under My Events. Nothing more: no other events, no creating or copying events,
+ * no Command Staff dashboard.
  */
 class PickedCoordinatorAccessTest extends TestCase
 {
@@ -67,7 +68,10 @@ class PickedCoordinatorAccessTest extends TestCase
         $this->actingAs($this->member)
             ->get(route('events.display', ['event' => $this->event]))
             ->assertOk()
-            ->assertDontSee(route('admin.events.update', ['event' => $this->event]), false);
+            ->assertDontSee(route('admin.events.update', ['event' => $this->event]), false)
+            ->assertDontSee('My Events');
+
+        $this->actingAs($this->member)->get(route('admin.events.list'))->assertForbidden();
     }
 
     public function test_a_member_picked_as_coordinator_can_open_every_page_of_that_event(): void
@@ -81,8 +85,8 @@ class PickedCoordinatorAccessTest extends TestCase
                 ->assertOk();
         }
 
-        //  the event page links to Edit, not Copy, and the admin pages don't link to lists
-        //  they can't open
+        //  the event page links to Edit, not Copy, and the admin pages link to My Events
+        //  but not the dashboard
         $this->actingAs($this->member)
             ->get(route('events.display', ['event' => $this->event]))
             ->assertOk()
@@ -92,8 +96,29 @@ class PickedCoordinatorAccessTest extends TestCase
         $this->actingAs($this->member)
             ->get(route('admin.events.update', ['event' => $this->event]))
             ->assertOk()
-            ->assertDontSee('href="'.route('admin.events.list').'"', false)
+            ->assertSee('href="'.route('admin.events.list').'"', false)
             ->assertDontSee('href="'.route('admin.display').'"', false);
+    }
+
+    public function test_a_member_picked_as_coordinator_finds_that_event_under_my_events(): void
+    {
+        $this->pick($this->member);
+        Event::factory()->withOrganization($this->region)->create(['name' => 'Someone Elses Troop']);
+
+        $this->actingAs($this->member)
+            ->get(route('events.list'))
+            ->assertOk()
+            ->assertSee('My Events')
+            ->assertDontSee('Create Event');
+
+        $this->actingAs($this->member)
+            ->get(route('admin.events.list'))
+            ->assertOk()
+            ->assertSee('Coordinated Troop')
+            ->assertSee(route('admin.events.update', ['event' => $this->event]), false)
+            ->assertDontSee('Someone Elses Troop')
+            ->assertDontSee(route('admin.events.create'), false)
+            ->assertDontSee(route('admin.events.copy', ['event' => $this->event]), false);
     }
 
     public function test_a_member_picked_as_coordinator_can_run_the_roster(): void
@@ -116,7 +141,6 @@ class PickedCoordinatorAccessTest extends TestCase
         $another = Event::factory()->withOrganization($this->region)->create();
 
         $this->actingAs($this->member)->get(route('admin.events.update', ['event' => $another]))->assertForbidden();
-        $this->actingAs($this->member)->get(route('admin.events.list'))->assertForbidden();
         $this->actingAs($this->member)->get(route('admin.events.create'))->assertForbidden();
         $this->actingAs($this->member)->get(route('admin.events.copy', ['event' => $this->event]))->assertForbidden();
         $this->actingAs($this->member)->post(route('admin.events.copy', ['event' => $this->event]))->assertForbidden();
@@ -158,6 +182,7 @@ class PickedCoordinatorAccessTest extends TestCase
         $this->actingAs($this->member)
             ->get(route('admin.events.update', ['event' => $this->event]))
             ->assertForbidden();
+        $this->actingAs($this->member)->get(route('admin.events.list'))->assertForbidden();
     }
 
     public function test_a_retired_trooper_picked_as_coordinator_has_no_access(): void
@@ -168,6 +193,7 @@ class PickedCoordinatorAccessTest extends TestCase
         $this->actingAs($this->member->fresh())
             ->get(route('admin.events.update', ['event' => $this->event]))
             ->assertForbidden();
+        $this->actingAs($this->member->fresh())->get(route('admin.events.list'))->assertForbidden();
     }
 
     public function test_the_overview_flags_candidates_below_event_coordinator(): void

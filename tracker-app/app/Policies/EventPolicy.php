@@ -32,6 +32,21 @@ class EventPolicy
     }
 
     /**
+     * Determine whether the user can open the events list ("My Events").
+     *
+     * Everyone who can create events can, and so can a trooper picked as an event's
+     * coordinator, whatever their role. The list shows only the events they manage.
+     *
+     * @param  Trooper  $trooper  The authenticated user performing the action.
+     * @return bool True if the user can create events or manages at least one, false otherwise.
+     */
+    public function viewAny(Trooper $trooper): bool
+    {
+        return $this->create($trooper)
+            || Event::managedBy($trooper)->exists();
+    }
+
+    /**
      * Determine whether the user can copy an event into a new one.
      *
      * Moderators can copy what they can update. Event coordinators can copy any event

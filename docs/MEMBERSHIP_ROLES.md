@@ -206,7 +206,8 @@ Full unrestricted system access, shown as **System Owner**. Cannot be self-assig
 | Plugins, System Check, Merge | — | — | — | — | — | — | ✓ |
 
 ¹ Plus any event they're picked to coordinate (see "Event Coordinator" in `EVENTS.md`). Picking
-someone below event coordinator asks for confirmation.
+someone below event coordinator asks for confirmation. While picked, a member, handler or visitor
+also gets **My Events** in the Events menu, listing just those events (no Create Event).
 
 ---
 

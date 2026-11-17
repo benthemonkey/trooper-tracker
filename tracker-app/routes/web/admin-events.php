@@ -34,9 +34,11 @@ Route::prefix('admin/events')
     ->middleware(['auth'])
     ->group(function ()
     {
+        //  the event policy decides: a trooper picked as an event's coordinator gets the list too
+        Route::get('/', ListController::class)->name('list');
+
         Route::middleware('check.role:moderator,staff_officer,system_owner,event_coordinator')->group(function ()
         {
-            Route::get('/', ListController::class)->name('list');
             Route::get('/create', CreateController::class)->name('create');
             Route::post('/create', CreateSubmitController::class);
             Route::get('/{event}/copy', CopyController::class)->name('copy');

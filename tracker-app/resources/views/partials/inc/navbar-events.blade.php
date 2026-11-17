@@ -39,7 +39,10 @@
                 <i class="fa fa-fw fa-ban fa-lg me-2"></i>
                 Cancelled
             </x-nav-link>
-            @role(['event_coordinator'])
+            {{-- event coordinators, and anyone else picked as an event's coordinator (My Events only);
+                 moderators and up reach the list from Command Staff --}}
+            @php($creates_events = Auth::user()->is_event_coordinator)
+            @if($creates_events || (Auth::user()->cannot('create', App\Models\Event::class) && Auth::user()->can('viewAny', App\Models\Event::class)))
                 <li>
                     <hr class="dropdown-divider">
                 </li>
@@ -48,12 +51,14 @@
                     <i class="fa fa-fw fa-clipboard-list fa-lg me-2"></i>
                     My Events
                 </x-nav-link>
-                <x-nav-link :url="route('admin.events.create')"
-                            :active="request()->routeIs('admin.events.create')">
-                    <i class="fa fa-fw fa-plus fa-lg me-2"></i>
-                    Create Event
-                </x-nav-link>
-            @endrole
+                @if($creates_events)
+                    <x-nav-link :url="route('admin.events.create')"
+                                :active="request()->routeIs('admin.events.create')">
+                        <i class="fa fa-fw fa-plus fa-lg me-2"></i>
+                        Create Event
+                    </x-nav-link>
+                @endif
+            @endif
         </ul>
     </li>
     @endunless
