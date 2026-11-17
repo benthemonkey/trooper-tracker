@@ -10,8 +10,8 @@ use App\Jobs\SendEventCreatedNotificationsJob;
 use App\Models\Event;
 use App\Models\EventShift;
 use App\Models\EventTrooper;
-use App\Models\EventUpload;
 use App\Models\EventType;
+use App\Models\EventUpload;
 use App\Models\Organization;
 use App\Models\Trooper;
 use App\Models\TrooperAssignment;
@@ -23,7 +23,8 @@ use Tests\TestCase;
 
 /**
  * An event coordinator creates events for organizations they belong to and manages only
- * the events they created, without any other command staff access.
+ * the events they created or were picked to coordinate, without any other command staff
+ * access.
  */
 class EventCoordinatorAccessTest extends TestCase
 {
@@ -242,8 +243,6 @@ class EventCoordinatorAccessTest extends TestCase
             EventTrooper::STATUS => EventTrooperStatus::GOING,
         ]);
         $upload = EventUpload::factory()->create([EventUpload::EVENT_ID => $others->id]);
-        //  being picked as its coordinator gives no edit rights either
-        $others->update([Event::COORDINATOR_TROOPER_ID => $this->event_coordinator->id]);
 
         $pages = ['update', 'shifts', 'charity', 'troopers', 'uploads', 'mission-review'];
 
@@ -273,6 +272,20 @@ class EventCoordinatorAccessTest extends TestCase
 
         $this->assertNotSoftDeleted($sign_up);
         $this->assertModelExists($upload);
+    }
+
+    public function test_event_coordinator_picked_to_coordinate_someone_elses_event_manages_it(): void
+    {
+        $others = Event::factory()->withOrganization($this->region)->create(['name' => 'Picked Troop']);
+        $shift = EventShift::factory()->forEvent($others)->create();
+        EventTrooper::factory()->forEventShift($shift)->forTrooper($this->event_coordinator)->create([
+            EventTrooper::STATUS => EventTrooperStatus::GOING,
+        ]);
+        $others->update([Event::COORDINATOR_TROOPER_ID => $this->event_coordinator->id]);
+
+        $this->actingAs($this->event_coordinator)->get(route('admin.events.update', ['event' => $others]))->assertOk();
+        $this->actingAs($this->event_coordinator)->get(route('admin.events.troopers', ['event' => $others]))->assertOk();
+        $this->actingAs($this->event_coordinator)->get(route('admin.events.list'))->assertOk()->assertSee('Picked Troop');
     }
 
     /**

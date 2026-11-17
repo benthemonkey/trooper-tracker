@@ -62,12 +62,25 @@ class UpdateController extends PageController
         }
 
         //  the creator is the empty choice, not an option of their own
-        $coordinator_options = $event->coordinatorCandidates()
-            ->reject(fn (Trooper $trooper): bool => $trooper->id === $event->created_id)
-            ->pluck(Trooper::DISPLAY_NAME, Trooper::ID)
+        $candidates = $event->coordinatorCandidates()
+            ->reject(fn (Trooper $trooper): bool => $trooper->id === $event->created_id);
+
+        $coordinator_options = $candidates->pluck(Trooper::DISPLAY_NAME, Trooper::ID)->all();
+
+        //  picking one of these lets someone below event coordinator edit the event: the page
+        //  warns and asks to confirm
+        $coordinator_below_role = $candidates
+            ->reject(fn (Trooper $trooper): bool => $trooper->membership_role->managesEvents())
+            ->map(fn (Trooper $trooper): string => (string) $trooper->id)
+            ->values()
             ->all();
 
-        $data = compact('event', 'organizations', 'coordinator_options');
+        //  a coordinator who can't host for the event's organization can't move it either
+        $can_change_host = Organization::eventHostableBy($request->user())
+            ->where(Organization::ID, $event->organization_id)
+            ->exists();
+
+        $data = compact('event', 'organizations', 'coordinator_options', 'coordinator_below_role', 'can_change_host');
 
         return view('pages.admin.events.update', $data);
     }

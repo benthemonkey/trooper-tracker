@@ -64,13 +64,15 @@ Members hear about it before they sign up, not after:
 
 ## Event Coordinator
 
-The event page shows an "Event Coordinator" under the Commanding Officer box, linked to their service record. It's whoever created the event (`created_id`) unless someone else is picked, since the person who makes an event isn't always the one who runs it.
+The event page shows an "Event Coordinator" under the Point of Contact box, linked to their service record. It's whoever created the event (`created_id`) unless someone else is picked, since the person who makes an event isn't always the one who runs it.
 
 Anyone who can edit the event picks the coordinator on its Overview tab (`coordinator_trooper_id`), before or after the event. The choices are the troopers going to or attended on any of its shifts, including attendance waiting for a moderator to verify (`Event::COORDINATOR_STATUSES`); leaving it empty means the creator. If the picked trooper's sign-ups stop qualifying (a status change, a removed sign-up or a removed shift), the field goes back to empty and the creator shows again (`Event::releaseIneligibleCoordinators()`, from the sign-up and shift observers). It's a quiet update: no notifications or forum edits.
 
-Picking a coordinator doesn't change who created the event, so the forum thread stays under the creator's name, and an event coordinator role still manages only the events they created.
+The picked coordinator can edit and run that event, whatever their role, as long as their membership is active: details, shifts, charity, roster, photos and mission review (`Event::managedBy()`, so `EventPolicy::update`). A member gets only that event's pages. They can't see the events list, create or copy events, or move the event to an organization they can't host for, so the Overview shows its host as plain text. Losing the pick (someone else is picked, or their sign-up stops qualifying) ends the access. Picking someone below event coordinator (member, handler or visitor) shows a warning under the field, and saving asks for confirmation.
 
-**Source:** `app/Models/Event.php` (`eventCoordinator()`, `coordinatorCandidates()`), `resources/views/pages/events/inc/coordinator.blade.php`, `resources/views/pages/admin/events/inc/coordinator.blade.php`
+Picking a coordinator doesn't change who created the event, so the forum thread stays under the creator's name.
+
+**Source:** `app/Models/Event.php` (`eventCoordinator()`, `coordinatorCandidates()`), `app/Models/Scopes/HasEventScopes.php` (`scopeManagedBy()`), `routes/web/admin-events.php`, `resources/views/pages/events/inc/coordinator.blade.php`, `resources/views/pages/admin/events/inc/coordinator.blade.php`
 
 ---
 

@@ -43,6 +43,12 @@ class EventPolicy
      */
     public function copy(Trooper $trooper, Event $subject): bool
     {
+        //  a member picked as an event's coordinator can edit it, but not create events
+        if (!$this->create($trooper))
+        {
+            return false;
+        }
+
         if ($trooper->is_event_coordinator)
         {
             return Organization::eventHostableBy($trooper)
@@ -107,7 +113,8 @@ class EventPolicy
     /**
      * Check if a user can moderate a subject event.
      * An admin can moderate any event. A moderator can moderate events within their assigned
-     * scope. An event coordinator can moderate the events they created.
+     * scope. An event coordinator can moderate the events they created. Whoever is picked as
+     * an event's coordinator can moderate that event, whatever their role.
      *
      * @param  Trooper  $trooper  The user performing the action (moderator).
      * @param  Event  $subject  The event being moderated.

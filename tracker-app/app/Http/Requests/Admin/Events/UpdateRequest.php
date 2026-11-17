@@ -6,8 +6,9 @@ namespace App\Http\Requests\Admin\Events;
 
 use App\Http\Requests\Concerns\HasNormalizers;
 use App\Models\Event;
-use App\Models\Trooper;
 use App\Models\EventOrganization;
+use App\Models\Organization;
+use App\Models\Trooper;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -60,13 +61,24 @@ class UpdateRequest extends FormRequest
      */
     public function rules(): array
     {
+        $event = $this->route('event');
+
         return [
             ...$this->getCommonRules(),
+            //  the event may stay with its host even when this trooper can't host for it (they
+            //  were picked as its coordinator), but only moves to an organization they can host for
+            Event::ORGANIZATION_ID => [
+                'required',
+                Rule::in([
+                    $event->organization_id,
+                    ...Organization::eventHostableBy($this->user())->pluck(Organization::ID)->all(),
+                ]),
+            ],
             //  only someone going or attended can be picked; empty means the creator
             Event::COORDINATOR_TROOPER_ID => [
                 'nullable',
                 'integer',
-                Rule::in($this->route('event')->coordinatorCandidates()->pluck(Trooper::ID)->all()),
+                Rule::in($event->coordinatorCandidates()->pluck(Trooper::ID)->all()),
             ],
         ];
     }
