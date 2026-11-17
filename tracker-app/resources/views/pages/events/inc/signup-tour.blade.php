@@ -1,21 +1,18 @@
 {{--
-    MIDWEST ONLY, TEMPORARY: a one-time "How sign-up works" tour for troopers moving over from the
-    old tracker, where signing up was one form with a Submit button. Not meant for upstream; remove
-    it some months after the migration by deleting this file and the two lines that use it in
-    pages/events/inc/shifts.blade.php (the @include and the "How sign-up works" button).
-
-    Starts by itself the first time a trooper opens an event with an open shift, on that device
-    (remembered in the browser's localStorage, so there's nothing on the server). The button above
-    the roster replays it. The example rows below are a picture only: nothing in them works.
+    The "How sign-up works" tour: signing up has no form or Submit button, so it shows where each
+    step happens. Who it starts by itself for is the tracker.signup_tour setting
+    (App\Support\SignUpTour); it then stays quiet on that browser once seen. The button above the
+    roster (pages/events/inc/shifts.blade.php) replays it. Behaviour: resources/js/events/signupTour.js.
+    The example rows below are a picture only: nothing in them works.
 --}}
 @php
-    $tour_auto_start = $event->event_shifts->contains(fn ($event_shift) => $event_shift->is_open);
+    $tour_auto_start = \App\Support\SignUpTour::startsFor(Auth::user(), $event);
     $tour_brief_pending = ($mission_brief_required ?? false) && !($has_mission_brief_ack ?? false);
     $tour_status_options = $event->signUpStatusOptions(\App\Enums\EventTrooperStatus::GOING);
     $tour_pending = \App\Enums\EventTrooperStatus::PENDING;
     $tour_going = \App\Enums\EventTrooperStatus::GOING;
 @endphp
-<div x-data="signUpTour({ autoStart: @js($tour_auto_start), storageKey: @js('tt.signupTourSeen.' . Auth::id()) })"
+<div x-data="Events.signupTour({ autoStart: @js($tour_auto_start), storageKey: @js('tt.signupTourSeen.' . Auth::id()) })"
      x-on:signup-tour:start.window="start()"
      x-on:keydown.escape.window="active && end()"
      data-signup-tour
@@ -110,8 +107,8 @@
     {{-- the steps, in order; a step whose target isn't on the page is left out --}}
     <template data-tour-step
               data-title="How signing up works">
-        Signing up works a little differently here. If you used the old tracker: there's no sign-up
-        form and no Submit button any more. Everything saves the moment you pick it.
+        Signing up here has no form to fill in and no Submit button. Everything saves the moment
+        you pick it.
         <br /><br />
         This takes about a minute, and nothing in it signs you up.
     </template>
@@ -224,130 +221,3 @@
     </div>
 </div>
 
-@once
-    @push('scripts')
-        <style>
-            .signup-tour-example { border-style: dashed; }
-            /* absolute in page coordinates: the browser scrolls it with the content. The shadow
-               dims everything around the hole, however far the page scrolls. */
-            .signup-tour-spotlight {
-                position: absolute;
-                z-index: 1075;
-                pointer-events: none;
-                border-radius: .5rem;
-                box-shadow: 0 0 0 3px var(--bs-warning), 0 0 0 100000px rgba(0, 0, 0, .6);
-                transition: top .35s ease, left .35s ease, width .35s ease, height .35s ease;
-            }
-            .signup-tour-spotlight--none { box-shadow: 0 0 0 100000px rgba(0, 0, 0, .6); }
-            .signup-tour-card {
-                position: fixed;
-                z-index: 1080;
-                left: 16px;
-                right: 16px;
-                bottom: 16px;
-                max-height: 45vh;
-                overflow-y: auto;
-            }
-            @media (min-width: 768px) {
-                .signup-tour-card { left: auto; right: 24px; bottom: 24px; width: 440px; }
-            }
-            @media (prefers-reduced-motion: reduce) {
-                .signup-tour-spotlight { transition: none; }
-            }
-        </style>
-        <script>
-            window.signUpTour = function ({ autoStart, storageKey }) {
-                const visible = (el) => el !== null && el.getClientRects().length > 0;
-                const find = (selector) => selector
-                    ? [...document.querySelectorAll(selector)].find(visible) ?? null
-                    : null;
-
-                return {
-                    active: false,
-                    steps: [],
-                    index: 0,
-                    spot: null,
-                    layout: null,
-
-                    init() {
-                        let seen = false;
-                        try { seen = localStorage.getItem(storageKey) !== null; } catch (e) {}
-                        if (autoStart && !seen) {
-                            setTimeout(() => this.start(), 600);
-                        }
-                    },
-
-                    get step() { return this.steps[this.index] ?? null; },
-                    get isLast() { return this.index === this.steps.length - 1; },
-
-                    //  page coordinates; with no target, a zero-size hole mid-screen just dims the page
-                    get spotStyle() {
-                        const s = this.spot ?? { top: scrollY + innerHeight / 2, left: scrollX + innerWidth / 2, width: 0, height: 0 };
-                        return `top:${s.top}px;left:${s.left}px;width:${s.width}px;height:${s.height}px`;
-                    },
-
-                    async start() {
-                        if (this.active) return;
-                        this.active = true;
-                        //  let the example rows show before looking for the steps' targets
-                        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-                        this.steps = [...this.$el.querySelectorAll('template[data-tour-step]')]
-                            .map((t) => ({
-                                title: t.dataset.title,
-                                body: t.innerHTML,
-                                target: t.dataset.target ?? null,
-                                unless: t.dataset.unless ?? null,
-                            }))
-                            .filter((s) => s.target === null || find(s.target))
-                            .filter((s) => s.unless === null || !find(s.unless));
-                        this.show(0);
-                        this.$nextTick(() => this.$refs.next?.focus());
-                        //  content loading above the target moves it down the page
-                        this.layout = new ResizeObserver(() => this.reposition());
-                        this.layout.observe(document.body);
-                    },
-
-                    targetEl() {
-                        const s = this.step;
-                        return s && s.target ? find(s.target) : null;
-                    },
-
-                    show(i) {
-                        this.index = i;
-                        const el = this.targetEl();
-                        if (el) {
-                            const top = scrollY + el.getBoundingClientRect().top - Math.max(80, innerHeight * 0.2);
-                            const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
-                            scrollTo({ top: Math.max(0, top), behavior: smooth ? 'smooth' : 'auto' });
-                        }
-                        this.reposition();
-                    },
-
-                    //  in page coordinates, so scrolling never moves it; only a new step or a resize does
-                    reposition() {
-                        const el = this.targetEl();
-                        if (!el) { this.spot = null; return; }
-                        const r = el.getBoundingClientRect();
-                        const pad = 6;
-                        this.spot = {
-                            top: r.top + scrollY - pad,
-                            left: r.left + scrollX - pad,
-                            width: r.width + pad * 2,
-                            height: r.height + pad * 2,
-                        };
-                    },
-
-                    next() { this.isLast ? this.end() : this.show(this.index + 1); },
-                    back() { if (this.index > 0) this.show(this.index - 1); },
-
-                    end() {
-                        this.active = false;
-                        this.spot = null;
-                        this.layout?.disconnect();
-                        try { localStorage.setItem(storageKey, new Date().toISOString()); } catch (e) {}
-                    },
-                };
-            };
-        </script>
-    @endpush
-@endonce
