@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Admin\Events;
 use App\Enums\EventStatus;
 use App\Http\Controllers\PageController;
 use App\Messages\Events\Queries\GetEventsForModerator;
-use App\Models\Event;
 use App\Models\Filters\EventFilter;
 use App\Models\Organization;
 use Illuminate\Contracts\View\View;
@@ -57,8 +56,6 @@ class ListController extends PageController
      */
     public function __invoke(Request $request, EventFilter $filter): View
     {
-        $this->authorize('viewAny', Event::class);
-
         $trooper = $request->user();
 
         $organization = $this->getOrganization($request);

@@ -66,11 +66,9 @@
                 Status
             </th>
             <th>
-                @can('create', App\Models\Event::class)
-                    <x-link-button-create :url="route('admin.events.create', ['organization_id' => request('organization_id')])">
-                        Event
-                    </x-link-button-create>
-                @endcan
+                <x-link-button-create :url="route('admin.events.create', ['organization_id' => request('organization_id')])">
+                    Event
+                </x-link-button-create>
             </th>
         </tr>
     </thead>
@@ -109,9 +107,7 @@
                     <x-action-menu>
                         @can('update', $event)
                             <x-action-link-update :url="route('admin.events.update', compact('event'))" />
-                            @can('create', App\Models\Event::class)
-                                <x-action-link-copy :url="route('admin.events.copy', compact('event'))" />
-                            @endcan
+                            <x-action-link-copy :url="route('admin.events.copy', compact('event'))" />
                         @endcan
                     </x-action-menu>
                 </td>

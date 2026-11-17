@@ -32,21 +32,6 @@ class EventPolicy
     }
 
     /**
-     * Determine whether the user can open the events list ("My Events").
-     *
-     * Everyone who can create events can, and so can a trooper picked as an event's
-     * coordinator, whatever their role. The list shows only the events they manage.
-     *
-     * @param  Trooper  $trooper  The authenticated user performing the action.
-     * @return bool True if the user can create events or manages at least one, false otherwise.
-     */
-    public function viewAny(Trooper $trooper): bool
-    {
-        return $this->create($trooper)
-            || Event::managedBy($trooper)->exists();
-    }
-
-    /**
      * Determine whether the user can copy an event into a new one.
      *
      * Moderators can copy what they can update. Event coordinators can copy any event
@@ -58,12 +43,6 @@ class EventPolicy
      */
     public function copy(Trooper $trooper, Event $subject): bool
     {
-        //  a member picked as an event's coordinator can edit it, but not create events
-        if (!$this->create($trooper))
-        {
-            return false;
-        }
-
         if ($trooper->is_event_coordinator)
         {
             return Organization::eventHostableBy($trooper)
@@ -128,8 +107,8 @@ class EventPolicy
     /**
      * Check if a user can moderate a subject event.
      * An admin can moderate any event. A moderator can moderate events within their assigned
-     * scope. An event coordinator can moderate the events they created. Whoever is picked as
-     * an event's coordinator can moderate that event, whatever their role.
+     * scope. An event coordinator can moderate the events they created. Either can moderate
+     * an event they're picked to coordinate.
      *
      * @param  Trooper  $trooper  The user performing the action (moderator).
      * @param  Event  $subject  The event being moderated.

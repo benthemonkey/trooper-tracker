@@ -6,6 +6,7 @@ namespace Tests\Feature\Http\Controllers\Admin\Events;
 
 use App\Enums\EventStatus;
 use App\Enums\EventTrooperStatus;
+use App\Enums\MembershipRole;
 use App\Jobs\SendEventCancelledNotificationsJob;
 use App\Jobs\SendEventCreatedNotificationsJob;
 use App\Models\Event;
@@ -248,14 +249,16 @@ class UpdateSubmitControllerTest extends TestCase
         $this->assertNull($event->fresh()->coordinator_trooper_id);
     }
 
-    public function test_invoke_refuses_a_coordinator_who_isnt_going_or_attended(): void
+    public function test_invoke_refuses_a_coordinator_who_isnt_going_or_attended_or_is_below_event_coordinator(): void
     {
         $admin = Trooper::factory()->asSystemOwner()->create();
         $event = $this->pastEvent();
         $no_show = $this->signUp($event, EventTrooperStatus::NO_SHOW);
-        $stranger = Trooper::factory()->create();
+        $stranger = Trooper::factory()->asEventCoordinator()->create();
+        $member = $this->signUp($event, EventTrooperStatus::ATTENDED);
+        $member->update([Trooper::MEMBERSHIP_ROLE => MembershipRole::MEMBER]);
 
-        foreach ([$no_show, $stranger] as $trooper)
+        foreach ([$no_show, $stranger, $member] as $trooper)
         {
             $this->actingAs($admin)
                 ->post('/admin/events/'.$event->id.'/update', $this->coordinatorPayload($event, $trooper->id))
@@ -282,7 +285,7 @@ class UpdateSubmitControllerTest extends TestCase
                 EventShift::SHIFT_STARTS_AT => $event->event_start,
                 EventShift::SHIFT_ENDS_AT => $event->event_end,
             ]);
-        $trooper = Trooper::factory()->create();
+        $trooper = Trooper::factory()->asEventCoordinator()->create();
         EventTrooper::factory()->forEventShift($shift)->forTrooper($trooper)->create([EventTrooper::STATUS => $status]);
 
         return $trooper;

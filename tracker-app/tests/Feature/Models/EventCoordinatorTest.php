@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\Models;
 
 use App\Enums\EventTrooperStatus;
+use App\Enums\MembershipRole;
+use App\Enums\MembershipStatus;
 use App\Models\Event;
 use App\Models\EventShift;
 use App\Models\EventTrooper;
@@ -55,6 +57,18 @@ class EventCoordinatorTest extends TestCase
         $candidates = $this->event->coordinatorCandidates()->pluck(Trooper::ID)->all();
 
         $this->assertEqualsCanonicalizing([$going->id, $attended->id, $verifying->id], $candidates);
+    }
+
+    public function test_candidates_are_active_event_coordinators_and_up(): void
+    {
+        $moderator = $this->signUp(EventTrooperStatus::GOING)->trooper;
+        $moderator->update([Trooper::MEMBERSHIP_ROLE => MembershipRole::MODERATOR]);
+        $member = $this->signUp(EventTrooperStatus::GOING)->trooper;
+        $member->update([Trooper::MEMBERSHIP_ROLE => MembershipRole::MEMBER]);
+        $retired = $this->signUp(EventTrooperStatus::GOING)->trooper;
+        $retired->update([Trooper::MEMBERSHIP_STATUS => MembershipStatus::RETIRED]);
+
+        $this->assertSame([$moderator->id], $this->event->coordinatorCandidates()->pluck(Trooper::ID)->all());
     }
 
     public function test_a_coordinator_who_stops_going_goes_back_to_the_creator(): void
@@ -113,7 +127,9 @@ class EventCoordinatorTest extends TestCase
 
     private function signUp(EventTrooperStatus $status): EventTrooper
     {
-        return EventTrooper::factory()->forEventShift($this->shift)->create([EventTrooper::STATUS => $status]);
+        return EventTrooper::factory()->forEventShift($this->shift)
+            ->forTrooper(Trooper::factory()->asEventCoordinator()->create())
+            ->create([EventTrooper::STATUS => $status]);
     }
 
     private function pick(EventTrooperStatus $status): EventTrooper

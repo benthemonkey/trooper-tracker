@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\EventStatus;
 use App\Enums\EventTrooperStatus;
+use App\Enums\MembershipRole;
 use App\Models\Base\Event as BaseEvent;
 use App\Models\Casts\SanitizeHtmlCast;
 use App\Models\Casts\EnforceZeroCast;
@@ -180,13 +181,21 @@ class Event extends BaseEvent
     }
 
     /**
-     * Troopers who can be picked as coordinator: going or attended on a shift of this event.
+     * Troopers who can be picked as coordinator: active event coordinators and up (command
+     * staff's rule) who are going or attended on a shift of this event.
      *
      * @return Collection<int, Trooper>
      */
     public function coordinatorCandidates(): Collection
     {
-        return Trooper::query()
+        $roles = collect(MembershipRole::cases())
+            ->filter(fn (MembershipRole $role): bool => $role->managesEvents())
+            ->map(fn (MembershipRole $role): string => $role->value)
+            ->values()
+            ->all();
+
+        return Trooper::active()
+            ->whereIn(Trooper::MEMBERSHIP_ROLE, $roles)
             ->whereHas('event_troopers', fn ($query) => $query
                 ->whereIn(EventTrooper::STATUS, self::COORDINATOR_STATUSES)
                 ->whereHas('event_shift', fn ($shift) => $shift->where(EventShift::EVENT_ID, $this->id)))

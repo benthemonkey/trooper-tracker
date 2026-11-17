@@ -197,7 +197,7 @@ Full unrestricted system access, shown as **System Owner**. Cannot be self-assig
 | Sign up for events | ✓ | ✓ (handler) | ✓ (top-level only) | ✓ | ✓ | ✓ | ✓ |
 | Manage own costumes | ✓ | — | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Create events | — | — | — | ✓ (own orgs) | ✓ (scoped) | ✓ | ✓ |
-| Manage events | picked ¹ | picked ¹ | picked ¹ | ✓ (own events) ¹ | ✓ (scoped) ¹ | ✓ | ✓ |
+| Manage events | — | — | — | ✓ (own events) ¹ | ✓ (scoped) ¹ | ✓ | ✓ |
 | Approve/deny troopers | — | — | — | — | ✓ (scoped) | ✓ | ✓ |
 | Manage notices/awards | — | — | — | — | ✓ (scoped) | ✓ | ✓ |
 | Command staff notifications | — | — | — | — | ✓ | ✓ | ✓ |
@@ -205,9 +205,8 @@ Full unrestricted system access, shown as **System Owner**. Cannot be self-assig
 | Unrestricted org scope | — | — | — | — | — | ✓ | ✓ |
 | Plugins, System Check, Merge | — | — | — | — | — | — | ✓ |
 
-¹ Plus any event they're picked to coordinate (see "Event Coordinator" in `EVENTS.md`). Picking
-someone below event coordinator asks for confirmation. While picked, a member, handler or visitor
-also gets **My Events** in the Events menu, listing just those events (no Create Event).
+¹ Plus any event they're picked to coordinate (see "Event Coordinator" in `EVENTS.md`). Only
+event coordinators and up can be picked.
 
 ---
 

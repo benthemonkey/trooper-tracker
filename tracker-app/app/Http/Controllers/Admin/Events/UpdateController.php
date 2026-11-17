@@ -74,19 +74,12 @@ class UpdateController extends PageController
             ? $this->coordinatorLabel($event->created_by)
             : "The event's creator";
 
-        //  picking one of these lets someone below event coordinator edit the event: the page
-        //  warns and asks to confirm, naming them (trooper id => name)
-        $coordinator_below_role = $candidates
-            ->reject(fn (Trooper $trooper): bool => $trooper->membership_role->managesEvents())
-            ->mapWithKeys(fn (Trooper $trooper): array => [$trooper->id => $trooper->legal_name ?: $trooper->display_name])
-            ->all();
-
         //  a coordinator who can't host for the event's organization can't move it either
         $can_change_host = Organization::eventHostableBy($request->user())
             ->where(Organization::ID, $event->organization_id)
             ->exists();
 
-        $data = compact('event', 'organizations', 'coordinator_options', 'coordinator_creator', 'coordinator_below_role', 'can_change_host');
+        $data = compact('event', 'organizations', 'coordinator_options', 'coordinator_creator', 'can_change_host');
 
         return view('pages.admin.events.update', $data);
     }

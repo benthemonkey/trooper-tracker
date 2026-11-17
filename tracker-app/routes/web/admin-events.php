@@ -31,22 +31,14 @@ use Illuminate\Support\Facades\Route;
 //  ADMIN/EVENTS
 Route::prefix('admin/events')
     ->name('admin.events.')
-    ->middleware(['auth'])
+    ->middleware(['auth', 'check.role:moderator,staff_officer,system_owner,event_coordinator'])
     ->group(function ()
     {
-        //  the event policy decides: a trooper picked as an event's coordinator gets the list too
         Route::get('/', ListController::class)->name('list');
-
-        Route::middleware('check.role:moderator,staff_officer,system_owner,event_coordinator')->group(function ()
-        {
-            Route::get('/create', CreateController::class)->name('create');
-            Route::post('/create', CreateSubmitController::class);
-            Route::get('/{event}/copy', CopyController::class)->name('copy');
-            Route::post('/{event}/copy', CopySubmitController::class);
-        });
-
-        //  one event's pages: the event policy decides, so the trooper picked as the event's
-        //  coordinator can run it whatever their role (EventCoordinatorAccessTest)
+        Route::get('/create', CreateController::class)->name('create');
+        Route::post('/create', CreateSubmitController::class);
+        Route::get('/{event}/copy', CopyController::class)->name('copy');
+        Route::post('/{event}/copy', CopySubmitController::class);
         Route::get('/{event}/update', UpdateController::class)->name('update');
         Route::post('/{event}/update', UpdateSubmitController::class);
         Route::get('/{event}/shifts', UpdateShiftsController::class)->name('shifts');

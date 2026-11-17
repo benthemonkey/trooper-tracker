@@ -41,9 +41,14 @@ class UpdateControllerTest extends TestCase
         foreach ($attendees as [$display_name, $legal_name, $status])
         {
             EventTrooper::factory()->forEventShift($shift)
-                ->forTrooper(Trooper::factory()->withDisplayName($display_name)->withLegalName($legal_name)->create())
+                ->forTrooper(Trooper::factory()->asEventCoordinator()->withDisplayName($display_name)->withLegalName($legal_name)->create())
                 ->create([EventTrooper::STATUS => $status]);
         }
+
+        //  only event coordinators and up can be picked
+        EventTrooper::factory()->forEventShift($shift)
+            ->forTrooper(Trooper::factory()->asMember()->withDisplayName('TK-425 Member')->create())
+            ->create([EventTrooper::STATUS => EventTrooperStatus::GOING]);
 
         $response = $this->actingAs($admin)->get(route('admin.events.update', ['event' => $event->id]));
 
@@ -56,6 +61,7 @@ class UpdateControllerTest extends TestCase
             'Zoe Going (TK-422 Going)',
         ]);
         $response->assertDontSee('TK-423 Tentative');
+        $response->assertDontSee('TK-425 Member');
     }
 
     public function test_invoke_requires_authentication(): void

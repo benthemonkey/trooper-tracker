@@ -218,8 +218,8 @@ trait HasEventScopes
      * Scope a query to the events a trooper may edit and run.
      *
      * Administrators manage every event, moderators the events in their scope and event
-     * coordinators the events they created. On top of that, whoever is picked as an event's
-     * coordinator manages that event, whatever their role, while their membership is active.
+     * coordinators the events they created. Event coordinators and moderators also manage an
+     * event they're picked to coordinate, outside their own events or scope.
      *
      * @param Builder<self> $query The Eloquent query builder.
      * @param Trooper $trooper The trooper managing events.
@@ -232,25 +232,21 @@ trait HasEventScopes
             return $query;
         }
 
-        $coordinates = fn (Builder $events) => $trooper->is_active
-            ? $events->where('tt_events.coordinator_trooper_id', $trooper->id)
-            : $events->whereRaw('1 = 0');
-
         if ($trooper->is_event_coordinator)
         {
             return $query->where(fn (Builder $events) => $events
                 ->where('tt_events.created_id', $trooper->id)
-                ->orWhere(fn (Builder $picked) => $coordinates($picked)));
+                ->orWhere('tt_events.coordinator_trooper_id', $trooper->id));
         }
 
         if ($trooper->is_moderator)
         {
             return $query->where(fn (Builder $events) => $events
                 ->moderatedBy($trooper)
-                ->orWhere(fn (Builder $picked) => $coordinates($picked)));
+                ->orWhere('tt_events.coordinator_trooper_id', $trooper->id));
         }
 
-        return $coordinates($query);
+        return $query->moderatedBy($trooper);
     }
 
     /**

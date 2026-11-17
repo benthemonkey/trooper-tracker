@@ -93,7 +93,7 @@ class UpdateRequest extends FormRequest
         return [
             Event::TROOPERS_ALLOWED.'.required_if' => 'The troopers allowed field is required when limit organizations is set to Yes.',
             Event::HANDLERS_ALLOWED.'.required_if' => 'The handlers allowed field is required when limit organizations is set to Yes.',
-            Event::COORDINATOR_TROOPER_ID.'.in' => 'The event coordinator must be going to or have attended the event.',
+            Event::COORDINATOR_TROOPER_ID.'.in' => 'The event coordinator must be an event coordinator or command staff member who is going to or attended the event.',
         ];
     }
 

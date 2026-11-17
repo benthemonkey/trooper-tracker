@@ -29,23 +29,6 @@ class EventPolicyTest extends TestCase
         $this->assertFalse($policy->create($member));
     }
 
-    public function test_view_any_allows_who_can_create_and_a_member_picked_as_an_events_coordinator(): void
-    {
-        $policy = new EventPolicy;
-
-        $event_coordinator = Trooper::factory()->asEventCoordinator()->create();
-        $moderator = Trooper::factory()->asModerator()->create();
-        $member = Trooper::factory()->asMember()->create();
-        $picked = Trooper::factory()->asMember()->create();
-        $organization = Organization::factory()->withNodePath('org.any')->create();
-        Event::factory()->withOrganization($organization)->create([Event::COORDINATOR_TROOPER_ID => $picked->id]);
-
-        $this->assertTrue($policy->viewAny($event_coordinator));
-        $this->assertTrue($policy->viewAny($moderator));
-        $this->assertFalse($policy->viewAny($member));
-        $this->assertTrue($policy->viewAny($picked));
-    }
-
     public function test_update_allows_administrator_for_any_event(): void
     {
         $policy = new EventPolicy;
