@@ -11,6 +11,10 @@ use App\Models\Trooper;
 use App\Notifications\BaseNotification;
 use TroopTracker\Plugins\Xenforo\Mail\ForumPostCommandStaffMail;
 
+/**
+ * A comment asks for command staff's attention. The event's coordinator gets it too, worded
+ * for them ($to_coordinator).
+ */
 class ForumPostCommandStaffNotification extends BaseNotification
 {
     public const CATEGORY = 'forum_post_command_staff';
@@ -20,11 +24,12 @@ class ForumPostCommandStaffNotification extends BaseNotification
     public function __construct(
         private readonly Event $event,
         private readonly Trooper $poster,
+        private readonly bool $to_coordinator = false,
     ) {}
 
     public function toMail(Trooper $notifiable): ForumPostCommandStaffMail
     {
-        return (new ForumPostCommandStaffMail($this->event, $this->poster))
+        return (new ForumPostCommandStaffMail($this->event, $this->poster, $this->to_coordinator))
             ->to($notifiable->email);
     }
 
@@ -32,7 +37,8 @@ class ForumPostCommandStaffNotification extends BaseNotification
     {
         return [
             'title' => 'Command Staff Alert: '.$this->event->name,
-            'body' => $this->poster->display_name.' has posted a comment requesting command staff attention.',
+            'body' => $this->poster->display_name.' has posted a comment requesting command staff attention.'
+                .($this->to_coordinator ? " You're getting this as the event's coordinator." : ''),
             'url' => '/events/details/'.$this->event->id,
         ];
     }
