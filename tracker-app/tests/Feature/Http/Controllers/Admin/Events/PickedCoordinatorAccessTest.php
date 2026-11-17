@@ -115,6 +115,7 @@ class PickedCoordinatorAccessTest extends TestCase
             ->get(route('admin.events.list'))
             ->assertOk()
             ->assertSee('Coordinated Troop')
+            ->assertSee('href="'.route('events.display', ['event' => $this->event]).'"', false)
             ->assertSee(route('admin.events.update', ['event' => $this->event]), false)
             ->assertDontSee('Someone Elses Troop')
             ->assertDontSee(route('admin.events.create'), false)
