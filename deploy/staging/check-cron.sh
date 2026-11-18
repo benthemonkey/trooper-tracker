@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Checks the staging cron jobs by running them the way cron does (bare environment, no
-# profile), instead of waiting for the next tick. Pass --refresh to also run the nightly
+# profile), instead of waiting for the next tick. Pass --refresh to also run the weekly
 # rebuild now (about a minute; staging stays up while it runs).
 #
 PHP=${TT_PHP:-/usr/local/php84/bin/php}

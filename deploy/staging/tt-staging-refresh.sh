@@ -4,7 +4,7 @@
 #
 # Imports into whichever of TT_DB_A / TT_DB_B the site is NOT using, checks the result, then
 # points .env at it. A failure at any step leaves the current copy live, untouched. Anything
-# changed on staging since the last run is discarded. Run nightly from cron, or by hand for an
+# changed on staging since the last run is discarded. Run weekly from cron, or by hand for an
 # on-demand refresh. Setup: deploy/staging/README.md.
 #
 # Output goes to TT_LOG_FILE. Only a failure prints to stderr, so cron mails only then.

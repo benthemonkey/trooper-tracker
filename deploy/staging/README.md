@@ -1,7 +1,7 @@
 # Midwest Garrison staging
 
 A copy of trooper-tracker on the Midwest DreamHost account, filled with real data from the live
-legacy (TT1.0) tracker and rebuilt from it every night. Changes made on staging don't survive the
+legacy (TT1.0) tracker and rebuilt from it every week. Changes made on staging don't survive the
 next rebuild. It can read the live forum (OAuth login) but never writes to it: no XenForo API key,
 plus `XENFORO_READ_ONLY=true`. Mail goes to the log.
 
@@ -64,7 +64,7 @@ It pulls, runs `composer install`, swaps in the build, migrates the live staging
 and restarts the queue. When `.env` has `SENTRY_DSN` or `SENTRY_BROWSER_DSN`, the Composer step
 uses upstream's plugin deploy tooling (`tracker-app/bin/plugin-packages.sh`) instead, so the
 Sentry plugin's package is installed and the plugin turned on; if that package can't be
-installed, it deploys without it and says so. The nightly refresh turns the plugin on in each
+installed, it deploys without it and says so. The weekly refresh turns the plugin on in each
 rebuilt copy when a DSN is set. The local rehearsal has no DSN, so Sentry stays off there. It warns if the front end changed since the build it is serving.
 `--refresh` also rebuilds the data now. To roll back: `git checkout <sha>`, then run it with
 `TT_NO_PULL=1` and a build of that commit. Midwest's workspace has `deploy-staging.sh`, which does

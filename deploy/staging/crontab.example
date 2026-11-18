@@ -10,8 +10,9 @@
 # After adding them, `bash ~/trooper-tracker/deploy/staging/check-cron.sh` runs them once the
 # way cron does and says whether they work.
 
-# 1. Staging Data Sync: nightly rebuild from the live legacy DB.
-#    Custom: minute 0, hour 2, every day. Email output to you (it prints only on failure).
+# 1. Staging Data Sync: weekly rebuild from the live legacy DB (the site's banner says "every week").
+#    Custom: minute 0, hour 2, day of week Monday (4:00 Central). Email output to you (it prints
+#    only on failure). Run it any other time with ./deploy-staging.sh --refresh.
 TT_PHP=/usr/local/php84/bin/php $HOME/trooper-tracker/deploy/staging/tt-staging-refresh.sh
 
 # 2. Laravel scheduler. Custom: every 10 minutes. No email.
@@ -23,6 +24,6 @@ cd $HOME/trooper-tracker/tracker-app && /usr/local/php84/bin/php artisan queue:w
 
 # Elsewhere, as crontab lines:
 #   MAILTO=you@example.com
-#   0 2 * * *    TT_PHP=/usr/local/php84/bin/php $HOME/trooper-tracker/deploy/staging/tt-staging-refresh.sh
+#   0 2 * * 1    TT_PHP=/usr/local/php84/bin/php $HOME/trooper-tracker/deploy/staging/tt-staging-refresh.sh
 #   */10 * * * * cd $HOME/trooper-tracker/tracker-app && /usr/local/php84/bin/php artisan schedule:run >> /dev/null 2>&1
 #   */10 * * * * cd $HOME/trooper-tracker/tracker-app && /usr/local/php84/bin/php artisan queue:work --stop-when-empty --max-time=580 >> /dev/null 2>&1

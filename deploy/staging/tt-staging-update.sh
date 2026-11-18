@@ -8,7 +8,7 @@
 # BUILD.tar.gz is a tarball of public/build made locally (the server has no Node; the Midwest
 # workspace's deploy-staging.sh builds, uploads and runs this). Without it the current build stays,
 # with a warning when the front end changed since it was built. --refresh also rebuilds the data
-# now rather than at the nightly run, and skips migrating the live DB, which it replaces. If that
+# now rather than at the weekly run, and skips migrating the live DB, which it replaces. If that
 # refresh fails, the new code is left running on the unmigrated DB until a refresh succeeds.
 # TT_NO_PULL=1 deploys whatever is checked out, e.g. after
 # `git checkout <sha>` to roll back.
