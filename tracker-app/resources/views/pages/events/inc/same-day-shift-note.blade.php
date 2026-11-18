@@ -5,14 +5,14 @@
 @php($same_day_shifts = $event->sameDayShiftsFor($event_shift, Auth::user()))
 @if($same_day_shifts->isNotEmpty())
     @php($other_times = $same_day_shifts->map(fn ($shift) => $shift->compact_time_display)->join(', ', ' and '))
-    @php($day = $event_shift->shift_starts_at->format('l, M j'))
+    @php($day = $event_shift->shift_starts_at->localFormat('l, M j'))
     @if($event->isOnShift($event_shift, Auth::user()))
         <div class="same-day-notice d-flex align-items-baseline gap-2 mt-3"
              role="note">
             <i class="fa fa-fw fa-calendar-day flex-shrink-0"></i>
             <span>
-                You're also signed up for {{ $other_times }} on {{ $day }}.
-                <strong>Together these shifts count as one troop.</strong>
+                {{ __('events.You\'re also signed up for :times on :day.', ['times' => $other_times, 'day' => $day]) }}
+                <strong>{{ __('events.Together these shifts count as one troop.') }}</strong>
             </span>
         </div>
     @elseif($event_shift->is_open)
@@ -20,8 +20,8 @@
              role="note">
             <i class="fa fa-fw fa-triangle-exclamation flex-shrink-0"></i>
             <span>
-                You're already signed up for {{ $other_times }} on {{ $day }}.
-                <strong>This shift won't add another troop:</strong> shifts on the same day count as one.
+                {{ __('events.You\'re already signed up for :times on :day.', ['times' => $other_times, 'day' => $day]) }}
+                {!! __('events.<strong>This shift won\'t add another troop:</strong> shifts on the same day count as one.') !!}
             </span>
         </div>
     @endif

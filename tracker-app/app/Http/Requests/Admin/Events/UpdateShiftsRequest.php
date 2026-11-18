@@ -75,7 +75,7 @@ class UpdateShiftsRequest extends FormRequest
                 {
                     $validator->errors()->add(
                         "shifts.{$key}.stations",
-                        'Stations must be a list of station entries.',
+                        __('admin.Stations must be a list of station entries.'),
                     );
                 }
                 else
@@ -89,7 +89,7 @@ class UpdateShiftsRequest extends FormRequest
                         {
                             $validator->errors()->add(
                                 "shifts.{$key}.stations.{$station_key}.name",
-                                'Station name and requested count are both required.',
+                                __('admin.Station name and requested count are both required.'),
                             );
                         }
                     }
@@ -133,7 +133,7 @@ class UpdateShiftsRequest extends FormRequest
             {
                 $validator->errors()->add(
                     "shifts.{$key}.starts_at",
-                    'Shift date and start time must be unique.',
+                    __('admin.Shift date and start time must be unique.'),
                 );
 
                 continue;
@@ -163,7 +163,7 @@ class UpdateShiftsRequest extends FormRequest
         {
             $validator->errors()->add(
                 "shifts.{$key}.ends_at",
-                'End time must be after start time.',
+                __('admin.End time must be after start time.'),
             );
         }
     }
@@ -189,7 +189,7 @@ class UpdateShiftsRequest extends FormRequest
         {
             $validator->errors()->add(
                 "shifts.{$key}.status",
-                'Cannot close a shift that has not yet ended ('.$shift_ends_at->format('M j, Y g:i A').').',
+                'Cannot close a shift that has not yet ended ('.$shift_ends_at->localFormat('M j, Y g:i A').').',
             );
         }
     }

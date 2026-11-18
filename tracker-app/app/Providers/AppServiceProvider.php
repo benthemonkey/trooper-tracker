@@ -15,6 +15,8 @@ use App\Services\BreadCrumbService;
 use App\View\Composers\EventTypeOptionsComposer;
 use App\View\Composers\NavbarNotificationsComposer;
 use App\View\Composers\ShiftAddTrooperComposer;
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Migrations\DatabaseMigrationRepository;
@@ -29,6 +31,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
@@ -79,6 +83,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         JsonResource::withoutWrapping();
+
+        $this->logMissingTranslations();
+        $this->registerLocalFormat();
 
         Gate::policy(TrooperRequest::class, TrooperRequestPolicy::class);
 
@@ -209,5 +216,43 @@ class AppServiceProvider extends ServiceProvider
 
             return $normalized->contains($user->membership_role);
         });
+    }
+
+    /**
+     * Locally, a key that no language defines (the page shows the raw key) is logged.
+     */
+    private function logMissingTranslations(): void
+    {
+        if (!$this->app->isLocal())
+        {
+            return;
+        }
+
+        Lang::handleMissingKeysUsing(function (string $key, array $replace, ?string $locale): null
+        {
+            Log::warning("Missing translation [{$locale}]: {$key}");
+
+            return null;
+        });
+    }
+
+    /**
+     * $date->localFormat('M j, Y') formats with the current language's version of
+     * that pattern from lang/<locale>/formats.php (keyed by the English pattern),
+     * with month and day names translated.
+     */
+    private function registerLocalFormat(): void
+    {
+        $macro = function (string $format): string
+        {
+            $key = "formats.{$format}";
+            $localized = Lang::has($key) ? __($key) : $format;
+
+            /** @var Carbon|CarbonImmutable $this */
+            return $this->translatedFormat($localized);
+        };
+
+        Carbon::macro('localFormat', $macro);
+        CarbonImmutable::macro('localFormat', $macro);
     }
 }

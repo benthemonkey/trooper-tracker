@@ -15,6 +15,7 @@ use App\Models\Casts\PhoneNumberCast;
 use App\Models\Concerns\HasAuditTrail;
 use App\Models\Concerns\HasFilter;
 use App\Models\Scopes\HasTrooperScopes;
+use App\Services\TranslationService;
 use Hyperdrive\Contracts\Actor;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\MustVerifyEmail;
@@ -23,6 +24,7 @@ use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
+use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -46,6 +48,7 @@ class Trooper extends BaseTrooper implements
     AuthenticatableContract,
     AuthorizableContract,
     CanResetPasswordContract,
+    HasLocalePreference,
     MustVerifyEmailContract
 {
     use Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail;
@@ -78,6 +81,19 @@ class Trooper extends BaseTrooper implements
     public function getAuditLabel(): string
     {
         return $this->display_name.' ('.$this->email.')';
+    }
+
+    /**
+     * The trooper's chosen language, or null for the site default. Mail and
+     * notifications use it to render in each recipient's own language.
+     */
+    public function preferredLocale(): ?string
+    {
+        $translations = app(TranslationService::class);
+
+        return $translations->isSupported($this->locale)
+            ? $this->locale
+            : null;
     }
 
     /**
@@ -455,12 +471,12 @@ class Trooper extends BaseTrooper implements
         {
             return match ($this->theme->value)
             {
-                TrooperTheme::CLONE->value => 'Cadet',
-                TrooperTheme::BOUNTY_HUNTER->value => 'Foundling',
-                TrooperTheme::REBEL->value => 'Outcast',
-                TrooperTheme::SITH->value => 'Initiate',
-                TrooperTheme::STORMTROOPER->value => 'Recruit',
-                default => 'Recruit',
+                TrooperTheme::CLONE->value => __('achievements.Cadet'),
+                TrooperTheme::BOUNTY_HUNTER->value => __('achievements.Foundling'),
+                TrooperTheme::REBEL->value => __('achievements.Outcast'),
+                TrooperTheme::SITH->value => __('achievements.Initiate'),
+                TrooperTheme::STORMTROOPER->value => __('achievements.Recruit'),
+                default => __('achievements.Recruit'),
             };
         }
 
@@ -470,93 +486,93 @@ class Trooper extends BaseTrooper implements
         {
             TrooperTheme::CLONE->value => match (true)
             {
-                $rank === 1 => 'Supreme Commander',
-                $rank <= 3 => 'Marshal Commander',
-                $rank <= 7 => 'Senior Commander',
-                $rank <= 15 => 'Regimental Commander',
-                $rank <= 31 => 'Battalion Commander',
-                $rank <= 63 => 'Captain',
-                $rank <= 127 => 'Lieutenant',
-                $rank <= 255 => 'Sergeant Major',
-                $rank <= 511 => 'Sergeant',
-                $rank <= 1023 => 'Corporal',
-                $rank <= 2047 => 'Trooper',
-                default => 'Cadet',
+                $rank === 1 => __('achievements.Supreme Commander'),
+                $rank <= 3 => __('achievements.Marshal Commander'),
+                $rank <= 7 => __('achievements.Senior Commander'),
+                $rank <= 15 => __('achievements.Regimental Commander'),
+                $rank <= 31 => __('achievements.Battalion Commander'),
+                $rank <= 63 => __('achievements.Captain'),
+                $rank <= 127 => __('achievements.Lieutenant'),
+                $rank <= 255 => __('achievements.Sergeant Major'),
+                $rank <= 511 => __('achievements.Sergeant'),
+                $rank <= 1023 => __('achievements.Corporal'),
+                $rank <= 2047 => __('achievements.Trooper'),
+                default => __('achievements.Cadet'),
             },
             TrooperTheme::BOUNTY_HUNTER->value => match (true)
             {
-                $rank === 1 => 'Guild Master',
-                $rank <= 3 => 'Apex Predator',
-                $rank <= 7 => 'Legendary Hunter',
-                $rank <= 15 => 'Elite Enforcer',
-                $rank <= 31 => 'Veteran Tracker',
-                $rank <= 63 => 'Guild Contractor',
-                $rank <= 127 => 'Huntsman',
-                $rank <= 255 => 'Tracker',
-                $rank <= 511 => 'Specialist',
-                $rank <= 1023 => 'Hireling',
-                $rank <= 2047 => 'Fledgling',
-                default => 'Foundling',
+                $rank === 1 => __('achievements.Guild Master'),
+                $rank <= 3 => __('achievements.Apex Predator'),
+                $rank <= 7 => __('achievements.Legendary Hunter'),
+                $rank <= 15 => __('achievements.Elite Enforcer'),
+                $rank <= 31 => __('achievements.Veteran Tracker'),
+                $rank <= 63 => __('achievements.Guild Contractor'),
+                $rank <= 127 => __('achievements.Huntsman'),
+                $rank <= 255 => __('achievements.Tracker'),
+                $rank <= 511 => __('achievements.Specialist'),
+                $rank <= 1023 => __('achievements.Hireling'),
+                $rank <= 2047 => __('achievements.Fledgling'),
+                default => __('achievements.Foundling'),
             },
             TrooperTheme::REBEL->value => match (true)
             {
-                $rank === 1 => 'Supreme Commander',
-                $rank <= 3 => 'General',
-                $rank <= 7 => 'Commander',
-                $rank <= 15 => 'Captain',
-                $rank <= 31 => 'Major',
-                $rank <= 63 => 'Lieutenant',
-                $rank <= 127 => 'Vanguard',
-                $rank <= 255 => 'Sergeant',
-                $rank <= 511 => 'Corporal',
-                $rank <= 1023 => 'Private',
-                $rank <= 2047 => 'Recruit',
-                default => 'Outcast',
+                $rank === 1 => __('achievements.Supreme Commander'),
+                $rank <= 3 => __('achievements.General'),
+                $rank <= 7 => __('achievements.Commander'),
+                $rank <= 15 => __('achievements.Captain'),
+                $rank <= 31 => __('achievements.Major'),
+                $rank <= 63 => __('achievements.Lieutenant'),
+                $rank <= 127 => __('achievements.Vanguard'),
+                $rank <= 255 => __('achievements.Sergeant'),
+                $rank <= 511 => __('achievements.Corporal'),
+                $rank <= 1023 => __('achievements.Private'),
+                $rank <= 2047 => __('achievements.Recruit'),
+                default => __('achievements.Outcast'),
             },
             TrooperTheme::SITH->value => match (true)
             {
-                $rank === 1 => 'Sith Emperor',
-                $rank <= 3 => 'Sith Lord',
-                $rank <= 7 => 'Sith Master',
-                $rank <= 15 => 'Inquisitor',
-                $rank <= 31 => 'Marauder',
-                $rank <= 63 => 'Assassin',
-                $rank <= 127 => 'Overseer',
-                $rank <= 255 => 'Apprentice',
-                $rank <= 511 => 'Acolyte',
-                $rank <= 1023 => 'Neophyte',
-                $rank <= 2047 => 'Adept',
-                default => 'Initiate',
+                $rank === 1 => __('achievements.Sith Emperor'),
+                $rank <= 3 => __('achievements.Sith Lord'),
+                $rank <= 7 => __('achievements.Sith Master'),
+                $rank <= 15 => __('achievements.Inquisitor'),
+                $rank <= 31 => __('achievements.Marauder'),
+                $rank <= 63 => __('achievements.Assassin'),
+                $rank <= 127 => __('achievements.Overseer'),
+                $rank <= 255 => __('achievements.Apprentice'),
+                $rank <= 511 => __('achievements.Acolyte'),
+                $rank <= 1023 => __('achievements.Neophyte'),
+                $rank <= 2047 => __('achievements.Adept'),
+                default => __('achievements.Initiate'),
             },
             TrooperTheme::STORMTROOPER->value => match (true)
             {
-                $rank === 1 => 'Grand Moff',
-                $rank <= 3 => 'Moff',
-                $rank <= 7 => 'General',
-                $rank <= 15 => 'Colonel',
-                $rank <= 31 => 'Major',
-                $rank <= 63 => 'Captain',
-                $rank <= 127 => 'Lieutenant',
-                $rank <= 255 => 'Sergeant Major',
-                $rank <= 511 => 'Sergeant',
-                $rank <= 1023 => 'Corporal',
-                $rank <= 2047 => 'Trooper',
-                default => 'Recruit',
+                $rank === 1 => __('achievements.Grand Moff'),
+                $rank <= 3 => __('achievements.Moff'),
+                $rank <= 7 => __('achievements.General'),
+                $rank <= 15 => __('achievements.Colonel'),
+                $rank <= 31 => __('achievements.Major'),
+                $rank <= 63 => __('achievements.Captain'),
+                $rank <= 127 => __('achievements.Lieutenant'),
+                $rank <= 255 => __('achievements.Sergeant Major'),
+                $rank <= 511 => __('achievements.Sergeant'),
+                $rank <= 1023 => __('achievements.Corporal'),
+                $rank <= 2047 => __('achievements.Trooper'),
+                default => __('achievements.Recruit'),
             },
             default => match (true)
             {
-                $rank === 1 => 'Grand Moff',
-                $rank <= 3 => 'Moff',
-                $rank <= 7 => 'General',
-                $rank <= 15 => 'Colonel',
-                $rank <= 31 => 'Major',
-                $rank <= 63 => 'Captain',
-                $rank <= 127 => 'Lieutenant',
-                $rank <= 255 => 'Sergeant Major',
-                $rank <= 511 => 'Sergeant',
-                $rank <= 1023 => 'Corporal',
-                $rank <= 2047 => 'Trooper',
-                default => 'Recruit',
+                $rank === 1 => __('achievements.Grand Moff'),
+                $rank <= 3 => __('achievements.Moff'),
+                $rank <= 7 => __('achievements.General'),
+                $rank <= 15 => __('achievements.Colonel'),
+                $rank <= 31 => __('achievements.Major'),
+                $rank <= 63 => __('achievements.Captain'),
+                $rank <= 127 => __('achievements.Lieutenant'),
+                $rank <= 255 => __('achievements.Sergeant Major'),
+                $rank <= 511 => __('achievements.Sergeant'),
+                $rank <= 1023 => __('achievements.Corporal'),
+                $rank <= 2047 => __('achievements.Trooper'),
+                default => __('achievements.Recruit'),
             },
         };
     }

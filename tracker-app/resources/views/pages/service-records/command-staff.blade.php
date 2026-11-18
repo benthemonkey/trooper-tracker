@@ -1,13 +1,13 @@
 @extends('layouts.base')
 
-@section('page-title', 'Command Staff')
+@section('page-title', __('service-records.Command Staff'))
 
 @section('content')
     <div class="container-fluid py-4">
         <!-- Cleaned up Header Block -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="h4 mb-0 text-uppercase fw-bold text-white">
-                <i class="fa-brands fa-empire me-2"></i> Command Staff
+                <i class="fa-brands fa-empire me-2"></i> {{ __('service-records.Command Staff') }}
             </h2>
         </div>
 
@@ -18,9 +18,9 @@
                 <x-table>
                     <thead>
                         <tr>
-                            <th>Trooper</th>
-                            <th>Role</th>
-                            <th>CS Organizations</th>
+                            <th>{{ __('service-records.Trooper') }}</th>
+                            <th>{{ __('service-records.Role') }}</th>
+                            <th>{{ __('service-records.CS Organizations') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -32,7 +32,7 @@
                                         {{ $trooper->display_name }}
                                     </a>
                                 </td>
-                                <td>{{ to_title($trooper->membership_role->name) }}</td>
+                                <td>{{ $trooper->membership_role->label() }}</td>
                                 <td>
                                     @if($trooper->cs_organizations?->isNotEmpty())
                                         <span class="text-break">
@@ -62,20 +62,20 @@
                                             {{ $trooper->display_name }}
                                         </a>
                                         <span class="badge bg-secondary text-uppercase text-xs tracking-wider">
-                                            {{ to_title($trooper->membership_role->name) }}
+                                            {{ $trooper->membership_role->label() }}
                                         </span>
                                     </div>
 
                                     <!-- Secondary Data Block: Organizations -->
                                     <div class="pt-2 border-top border-secondary mt-2">
                                         <small class="text-muted d-block text-uppercase fw-bold text-xs mb-1">
-                                            CS Organizations
+                                            {{ __('service-records.CS Organizations') }}
                                         </small>
                                         <p class="card-text text-white small mb-0 text-break">
                                             @if($trooper->cs_organizations?->isNotEmpty())
                                                 {{ $trooper->cs_organizations->pluck('name')->implode(', ') }}
                                             @else
-                                                <span class="text-muted small italic">None listed</span>
+                                                <span class="text-muted small italic">{{ __('service-records.None listed') }}</span>
                                             @endif
                                         </p>
                                     </div>
@@ -90,7 +90,7 @@
             <!-- 3. EMPTY STATE: Universal styling for both views if collection is blank -->
             <div class="card bg-dark border-secondary text-center py-5 my-4">
                 <div class="card-body">
-                    <p class="text-muted mb-0">No command staff found.</p>
+                    <p class="text-muted mb-0">{{ __('service-records.No command staff found.') }}</p>
                 </div>
             </div>
         @endif

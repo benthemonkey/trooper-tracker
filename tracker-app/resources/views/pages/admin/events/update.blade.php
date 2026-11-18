@@ -1,6 +1,6 @@
 @extends('layouts.base')
 
-@section('page-title', 'Update Event')
+@section('page-title', __('admin.Update Event'))
 
 @section('content')
 
@@ -15,7 +15,7 @@
                 @csrf
 
                 <x-input-container>
-                    <x-label>Hosting Organization:</x-label>
+                    <x-label>{{ __('admin.Hosting Organization:') }}</x-label>
                     @if($can_change_host)
                         <x-input-picker :property="'organization_id'"
                                         :route="'pickers.organization'"
@@ -42,11 +42,11 @@
                         <a href="{{ route('events.display', compact('event')) }}"
                            class="btn btn-outline-info mb-2"
                            target="_blank">
-                            View Event
+                            {{ __('admin.View Event') }}
                             <span class="fa fa-fw fa-external-link"></span>
                         </a>
                     </span>
-                    <x-submit-button>Update</x-submit-button>
+                    <x-submit-button>{{ __('admin.Update') }}</x-submit-button>
                     <x-link-button-cancel :url="route('admin.events.update', compact('event'))" />
                 </x-submit-container>
 
@@ -55,6 +55,6 @@
         </x-card>
     </x-slim-container>
 
-    <x-modal-picker :label="'Select an Organization'" />
+    <x-modal-picker :label="__('admin.Select an Organization')" />
 
 @endsection

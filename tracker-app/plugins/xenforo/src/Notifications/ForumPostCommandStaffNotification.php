@@ -36,9 +36,16 @@ class ForumPostCommandStaffNotification extends BaseNotification
     public function toArray(Trooper $notifiable): array
     {
         return [
-            'title' => 'Command Staff Alert: '.$this->event->name,
-            'body' => $this->poster->display_name.' has posted a comment requesting command staff attention.'
-                .($this->to_coordinator ? " You're getting this as the event's coordinator." : ''),
+            'title' => __('xenforo::notifications.Command Staff Alert: :event', ['event' => $this->event->name]),
+            'body' => $this->to_coordinator
+                ? __(
+                    "xenforo::notifications.:name has posted a comment requesting command staff attention. You're getting this as the event's coordinator.",
+                    ['name' => $this->poster->display_name]
+                )
+                : __(
+                    'xenforo::notifications.:name has posted a comment requesting command staff attention.',
+                    ['name' => $this->poster->display_name]
+                ),
             'url' => '/events/details/'.$this->event->id,
         ];
     }

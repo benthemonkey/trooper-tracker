@@ -7,6 +7,7 @@ namespace App\Http\Middleware;
 use App\Messages\App\Queries\GetConfig;
 use App\Models\Trooper;
 use App\Plugins\PluginSlots;
+use App\Services\TranslationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Middleware;
@@ -60,6 +61,11 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'config' => $config,
             'user' => $actor,
+            'i18n' => fn (): array => [
+                'locale' => app()->getLocale(),
+                'messages' => app(TranslationService::class)->groups('common'),
+            ],
+            'lang' => fn (): array => app(TranslationService::class)->forRoute($request->route()?->getName()),
             'results' => fn () => $request->session()->pull('results'),
             'plugin_slots' => fn (): array => $this->pluginSlots($request),
             'flash' => function () use ($request)

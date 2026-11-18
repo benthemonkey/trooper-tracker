@@ -1,6 +1,6 @@
 @extends('layouts.base')
 
-@section('page-title', 'Upcoming Events')
+@section('page-title', __('events.Upcoming Events'))
 
 @section('content')
 
@@ -14,7 +14,7 @@
     </div>
 
     @if(TroopTracker::isSupportGoalEnabled())
-        <x-card :label="'Support'">
+        <x-card :label="__('events.Support')">
             <div hx-get="{{ route('widgets.support-htmx') }}"
                  hx-trigger="load"
                  hx-swap="outerHTML">
@@ -32,7 +32,7 @@
                     x-bind:disabled="locating">
                 <i class="fa fa-fw fa-location-crosshairs"
                    x-bind:class="locating && 'fa-beat-fade'"></i>
-                Use Current Location
+                {{ __('events.Use Current Location') }}
             </button>
             <span class="small text-warning"
                   x-show="locationError"

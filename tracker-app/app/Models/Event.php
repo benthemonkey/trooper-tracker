@@ -181,26 +181,22 @@ class Event extends BaseEvent
     }
 
     /**
-     * Troopers who can be picked as coordinator: active event coordinators and up (command
-     * staff's rule) who are going or attended on a shift of this event.
+     * Troopers who can be picked as coordinator: active troopers who can create events
+     * (EventPolicy::create, so event coordinators and up; command staff's rule) and are
+     * going or attended on a shift of this event.
      *
      * @return Collection<int, Trooper>
      */
     public function coordinatorCandidates(): Collection
     {
-        $roles = collect(MembershipRole::cases())
-            ->filter(fn (MembershipRole $role): bool => $role->managesEvents())
-            ->map(fn (MembershipRole $role): string => $role->value)
-            ->values()
-            ->all();
-
         return Trooper::active()
-            ->whereIn(Trooper::MEMBERSHIP_ROLE, $roles)
             ->whereHas('event_troopers', fn ($query) => $query
                 ->whereIn(EventTrooper::STATUS, self::COORDINATOR_STATUSES)
                 ->whereHas('event_shift', fn ($shift) => $shift->where(EventShift::EVENT_ID, $this->id)))
             ->orderBy(Trooper::DISPLAY_NAME)
-            ->get();
+            ->get()
+            ->filter(fn (Trooper $trooper): bool => $trooper->can('create', self::class))
+            ->values();
     }
 
     /**
@@ -316,7 +312,7 @@ class Event extends BaseEvent
 
         if ($current !== null && !array_key_exists($current->value, $options))
         {
-            $options = [$current->value => to_title($current->name)] + $options;
+            $options = [$current->value => $current->label()] + $options;
         }
 
         return $options;
@@ -333,8 +329,8 @@ class Event extends BaseEvent
     {
         //Sat - Oct 03, 2026 - 2:00pm - 4:00pm
         return $this->full_date_display . ' - ' .
-            $this->event_start->format('g:ia') . ' - ' .
-            $this->event_end->format('g:ia');
+            $this->event_start->localFormat('g:ia') . ' - ' .
+            $this->event_end->localFormat('g:ia');
     }
 
     /**
@@ -347,8 +343,8 @@ class Event extends BaseEvent
     public function getFullDateDisplayAttribute(): string
     {
         //Sat - Oct 03, 2026 - 2:00pm - 4:00pm
-        return $this->event_start->format('D') . ' - ' .
-            $this->event_start->format('M d, Y');
+        return $this->event_start->localFormat('D') . ' - ' .
+            $this->event_start->localFormat('M d, Y');
     }
 
     /**
@@ -368,8 +364,8 @@ class Event extends BaseEvent
         $startFormat = ($start->format('a') === $end->format('a')) ? 'g' : 'ga';
 
         // Remove :00 from times to keep it tight (e.g., 2:00pm becomes 2pm)
-        $start_time = str_replace(':00', '', $start->format($startFormat));
-        $end_time = str_replace(':00', '', $end->format('ga'));
+        $start_time = str_replace(':00', '', $start->localFormat($startFormat));
+        $end_time = str_replace(':00', '', $end->localFormat('ga'));
 
         return $start_time . '-' . $end_time;
     }

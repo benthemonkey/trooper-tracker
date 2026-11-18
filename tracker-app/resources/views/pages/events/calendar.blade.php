@@ -1,6 +1,6 @@
 @extends('layouts.base')
 
-@section('page-title', 'Upcoming Events')
+@section('page-title', __('events.Upcoming Events'))
 
 @section('content')
 
@@ -14,7 +14,7 @@
     </div>
 
     @if(TroopTracker::isSupportGoalEnabled())
-        <x-card :label="'Support'">
+        <x-card :label="__('events.Support')">
             <div hx-get="{{ route('widgets.support-htmx') }}"
                  hx-trigger="load"
                  hx-swap="outerHTML">
@@ -28,18 +28,18 @@
         @include('pages.events.inc.event-filters', compact('costume_organizations'))
 
         @foreach ($months as $month)
-            <h3 class="mt-5">{{ $month['date']->format('F Y') }}</h3>
+            <h3 class="mt-5">{{ $month['date']->localFormat('F Y') }}</h3>
 
             <x-table class="event-calendar">
                 <thead>
                     <tr>
-                        <th class="text-center">Sun</th>
-                        <th class="text-center">Mon</th>
-                        <th class="text-center">Tue</th>
-                        <th class="text-center">Wed</th>
-                        <th class="text-center">Thu</th>
-                        <th class="text-center">Fri</th>
-                        <th class="text-center">Sat</th>
+                        <th class="text-center">{{ __('events.Sun') }}</th>
+                        <th class="text-center">{{ __('events.Mon') }}</th>
+                        <th class="text-center">{{ __('events.Tue') }}</th>
+                        <th class="text-center">{{ __('events.Wed') }}</th>
+                        <th class="text-center">{{ __('events.Thu') }}</th>
+                        <th class="text-center">{{ __('events.Fri') }}</th>
+                        <th class="text-center">{{ __('events.Sat') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -53,8 +53,8 @@
                                     <div class="calendar-content">
 
                                         <div class="calendar-date float-end fw-bold small {{ $date->month !== $month['date']->month ? 'text-muted' : '' }}">
-                                            <span class="d-md-none">{{ $date->format('D') }}</span>
-                                            {{ $date->format('j') }}
+                                            <span class="d-md-none">{{ $date->localFormat('D') }}</span>
+                                            {{ $date->localFormat('j') }}
                                         </div>
                                         <br />
 

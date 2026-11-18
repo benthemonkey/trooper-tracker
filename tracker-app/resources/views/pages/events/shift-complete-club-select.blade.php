@@ -1,6 +1,6 @@
 @extends('layouts.base')
 
-@section('page-title', 'Select Clubs for Credit')
+@section('page-title', __('events.Select Clubs for Credit'))
 
 @section('content')
 
@@ -8,15 +8,14 @@
 
     <div class="alert alert-info my-4">
         <h4 class="alert-heading">
-            Shift Completed for <b>{{ $event_trooper->event_shift->event->name }}</b>
+            {!! __('events.Shift Completed for :event', ['event' => '<b>'.e($event_trooper->event_shift->event->name).'</b>']) !!}
             <br />
             <span class="text-muted">
                 {{ $event_trooper->event_shift->time_display }}
             </span>
         </h4>
         <p>
-            Your costume is approved by multiple clubs you belong to.
-            Select all clubs that should receive credit for this troop.
+            {{ __('events.Your costume is approved by multiple clubs you belong to. Select all clubs that should receive credit for this troop.') }}
         </p>
     </div>
 
@@ -47,7 +46,7 @@
         </div>
 
         <button type="submit" class="btn btn-success">
-            Confirm Attendance
+            {{ __('events.Confirm Attendance') }}
         </button>
     </form>
 

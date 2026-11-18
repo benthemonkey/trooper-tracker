@@ -1,6 +1,6 @@
 @extends('layouts.base')
 
-@section('page-title', 'Share Event')
+@section('page-title', __('shares.Share Event'))
 
 @section('page-meta')
 
@@ -50,7 +50,7 @@
     <x-slim-container>
 
         <x-message>
-            This page is for members only. Please log in to view full details.
+            {{ __('shares.This page is for members only. Please log in to view full details.') }}
         </x-message>
 
     </x-slim-container>

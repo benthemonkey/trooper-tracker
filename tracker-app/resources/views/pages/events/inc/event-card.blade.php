@@ -34,7 +34,7 @@
         <div class="card-body">
             @if($event->at_risk)
                 <p class="card-text text-danger">
-                    ** risk of cancellation **
+                    {{ __('events.** risk of cancellation **') }}
                 </p>
             @endif
             <x-not-counted :event="$event"
@@ -50,13 +50,13 @@
             </p>
             <p class="card-text d-flex align-items-baseline">
                 <i class="fa fa-fw fa-calendar-day flex-shrink-0 me-2"></i>
-                <span>{{ $event->event_start->format('D M d, Y') }}</span>
+                <span>{{ $event->event_start->localFormat('D M d, Y') }}</span>
             </p>
             <ul class="list-group list-group-flush">
                 @php($shifts_count = $event->event_shifts->count())
                 @if($shifts_count > 1)
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ $shifts_count }} Shifts Available
+                        {{ trans_choice('events.:count Shift Available|:count Shifts Available', $shifts_count) }}
                     </li>
                 @endif
                 @foreach($event->event_shifts as $shift)
@@ -65,25 +65,25 @@
                        style="z-index: 2;">
                         <span>
                             @if($shifts_count > 1)
-                                {{ $shift->shift_starts_at->format('m/d') }}
+                                {{ $shift->shift_starts_at->localFormat('m/d') }}
                                 -
                             @endif
-                            {{ $shift->shift_starts_at->format('g:ia') }}
+                            {{ $shift->shift_starts_at->localFormat('g:ia') }}
                             -
-                            {{ $shift->shift_ends_at->format('g:ia') }}
+                            {{ $shift->shift_ends_at->localFormat('g:ia') }}
                         </span>
                         <span class="fw-bold">
                             @if($shift->troopers_allowed != null && $shift->event_troopers_count >= $shift->troopers_allowed)
                                 <span class="text-success">
-                                    FULL TROOP
+                                    {{ __('events.FULL TROOP') }}
                                     <i class="fa fa-fw fa-check-circle ms-2"></i>
                                 </span>
                             @elseif($shift->event_troopers_count == 0 && $shift->event_handlers_count == 0 && $shift->event_guests_count == 0)
                                 <span class="text-danger">
-                                    NOT ENOUGH!
+                                    {{ __('events.NOT ENOUGH!') }}
                                 </span>
                             @else
-                                {{ $shift->going_label }} going
+                                {{ __('events.:count going', ['count' => $shift->going_label]) }}
                             @endif
                         </span>
                     </a>

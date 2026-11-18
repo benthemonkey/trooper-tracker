@@ -1,6 +1,6 @@
 @extends('layouts.base')
 
-@section('page-title', 'Troopers Awarded')
+@section('page-title', __('admin.Troopers Awarded'))
 
 @section('content')
 
@@ -11,7 +11,7 @@
         <x-card>
             <x-input-container>
                 <x-label>
-                    Award:
+                    {{ __('admin.Award:') }}
                 </x-label>
                 <x-input-text :property="'award_name'"
                               :disabled="true"
@@ -20,7 +20,7 @@
 
             <x-input-container>
                 <x-label>
-                    Organization:
+                    {{ __('admin.Organization:') }}
                 </x-label>
                 <x-input-text :property="'organization_name'"
                               :disabled="true"
@@ -29,17 +29,17 @@
 
             <x-input-container>
                 <x-label>
-                    Frequency:
+                    {{ __('admin.Frequency:') }}
                 </x-label>
                 <x-input-text :property="'frequency'"
                               :disabled="true"
-                              :value="to_title($award->frequency->name)" />
+                              :value="$award->frequency->label()" />
             </x-input-container>
 
             <x-input-container class="text-end">
                 <a href="{{ route('admin.awards.assign-trooper', compact('award')) }}"
                    class="btn btn-outline-primary">
-                    Award Trooper
+                    {{ __('admin.Award Trooper') }}
                 </a>
             </x-input-container>
 
@@ -47,13 +47,13 @@
                 <thead>
                     <tr>
                         <th>
-                            Trooper
+                            {{ __('admin.Trooper') }}
                         </th>
                         <th>
-                            Awarded
+                            {{ __('admin.Awarded') }}
                         </th>
                         <th class="text-end">
-                            Actions
+                            {{ __('admin.Actions') }}
                         </th>
                     </tr>
                 </thead>
@@ -64,7 +64,7 @@
                                 {{ $trooper->display_name }}
                             </td>
                             <td>
-                                {{ $trooper->pivot->award_date->format('M d, Y') }}
+                                {{ $trooper->pivot->award_date->localFormat('M d, Y') }}
                             </td>
                             <td class="text-end">
                                 <form method="POST"
@@ -79,7 +79,7 @@
                                     <button type="submit"
                                             class="btn btn-outline-danger btn-sm"
                                             onclick="return confirm('Remove this award from {{ addslashes($trooper->display_name) }}?');">
-                                        Remove
+                                        {{ __('admin.Remove') }}
                                     </button>
                                 </form>
                             </td>

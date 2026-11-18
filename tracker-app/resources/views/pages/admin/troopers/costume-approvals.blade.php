@@ -1,6 +1,6 @@
 @extends('layouts.base')
 
-@section('page-title', 'Costume Approvals')
+@section('page-title', __('admin.Costume Approvals'))
 
 @section('content')
 
@@ -9,17 +9,16 @@
         <x-card>
 
             <p class="text-muted">
-                Troopers added these costumes themselves. Approve a costume once and the
-                trooper can use it for that club from then on.
+                {{ __('admin.Troopers added these costumes themselves. Approve a costume once and the trooper can use it for that club from then on.') }}
             </p>
 
             <x-table>
                 <thead>
                     <tr>
-                        <th>Trooper</th>
-                        <th>Costume</th>
-                        <th>Club</th>
-                        <th>Requested</th>
+                        <th>{{ __('admin.Trooper') }}</th>
+                        <th>{{ __('admin.Costume') }}</th>
+                        <th>{{ __('admin.Club') }}</th>
+                        <th>{{ __('admin.Requested') }}</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -32,14 +31,14 @@
                         </td>
                         <td>{{ $trooper_costume->organization_costume->costume->name }}</td>
                         <td>{{ $trooper_costume->organization_costume->organization->name }}</td>
-                        <td class="text-nowrap">{{ $trooper_costume->created_at?->format('M j, Y') }}</td>
+                        <td class="text-nowrap">{{ $trooper_costume->created_at?->localFormat('M j, Y') }}</td>
                         <td class="text-end text-nowrap">
                             @include('pages.admin.troopers.partials.costume-review-buttons', compact('trooper_costume'))
                         </td>
                     </tr>
                 @empty
                     <x-table-empty :colspan="5">
-                        No costumes are waiting for review.
+                        {{ __('admin.No costumes are waiting for review.') }}
                     </x-table-empty>
                 @endforelse
             </x-table>

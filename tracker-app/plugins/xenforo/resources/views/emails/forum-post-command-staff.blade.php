@@ -3,19 +3,19 @@
 @section('message')
     <p>
         @if($to_coordinator ?? false)
-            Esteemed Event Coordinator,
+            {{ __('xenforo::emails.Esteemed Event Coordinator,') }}
         @else
-            Esteemed Command Staff,
+            {{ __('xenforo::emails.Esteemed Command Staff,') }}
         @endif
     </p>
 
     <p>
-        <strong>{{ $poster->display_name }}</strong> has posted a comment on the following deployment and is requesting command staff attention:
+        {!! __('xenforo::emails.:name has posted a comment on the following deployment and is requesting command staff attention:', ['name' => '<strong>'.e($poster->display_name).'</strong>']) !!}
     </p>
 
     @if($to_coordinator ?? false)
         <p>
-            You're getting this as the event's coordinator.
+            {{ __("xenforo::emails.You're getting this as the event's coordinator.") }}
         </p>
     @endif
 
@@ -29,6 +29,6 @@
         </a>
     </p>
 
-    @include('emails.inc.signature')
+    @include(email_view('inc.signature'))
 
 @endsection

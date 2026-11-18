@@ -23,8 +23,8 @@ class UpdateController extends PageController
 {
     protected function initialized(): void
     {
-        $this->crumbs->addRoute('Command Staff', 'admin.display');
-        $this->crumbs->addRoute('Events', 'admin.events.list');
+        $this->crumbs->addRoute(__('admin.Command Staff'), 'admin.display');
+        $this->crumbs->addRoute(__('admin.Events'), 'admin.events.list');
     }
 
     /**
@@ -44,7 +44,7 @@ class UpdateController extends PageController
 
         if ($event->is_draft)
         {
-            $msg = 'This event is currently in Draft status and not visible to troopers.';
+            $msg = __('admin.This event is currently in Draft status and not visible to troopers.');
 
             FlashType::warning($msg);
         }
@@ -72,7 +72,7 @@ class UpdateController extends PageController
 
         $coordinator_creator = $event->created_by
             ? $this->coordinatorLabel($event->created_by)
-            : "The event's creator";
+            : __("admin.The event's creator");
 
         //  a coordinator who can't host for the event's organization can't move it either
         $can_change_host = Organization::eventHostableBy($request->user())

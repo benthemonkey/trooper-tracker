@@ -1,6 +1,6 @@
 @extends('layouts.base')
 
-@section('page-title', $costume->name . ' — Costume Leaderboard')
+@section('page-title', __('service-records.:costume — Costume Leaderboard', ['costume' => $costume->name]))
 
 @section('content')
 <div class="container-fluid py-4">
@@ -10,7 +10,7 @@
             <div>
                 <a href="{{ route('service-records.leaderboard', array_filter(['days' => $days, 'organization_id' => $organization_id])) }}"
                    class="text-muted text-decoration-none small text-uppercase fw-bold">
-                    <i class="fa-solid fa-arrow-left me-1"></i> Leaderboard
+                    <i class="fa-solid fa-arrow-left me-1"></i> {{ __('service-records.Leaderboard') }}
                 </a>
                 <h2 class="h4 mb-0 text-uppercase fw-bold mt-1">
                     <i class="fa-solid fa-shield-halved me-2"></i> {{ $costume->name }}
@@ -24,7 +24,7 @@
                     @endif
                     <x-label value="Club" />
                     <x-input-select :property="'organization_id'"
-                                    :placeholder="'All Clubs'"
+                                    :placeholder="__('service-records.All Clubs')"
                                     :value="$organization_id"
                                     :options="$organizations->pluck('name', 'id')->toArray()"
                                     onchange="this.form.submit()" />

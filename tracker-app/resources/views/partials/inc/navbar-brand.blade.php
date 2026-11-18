@@ -5,7 +5,7 @@
              height="24px"
              width="24px"
              src="{{ url(config('tracker.navbar_icon')) }}" />
-        <span class="ms-1">Home</span>
+        <span class="ms-1">{{ __('layout.Home') }}</span>
     </a>
 @else
     <a class="navbar-brand"
@@ -14,6 +14,6 @@
              height="24px"
              width="24px"
              src="{{ url(config('tracker.navbar_icon')) }}" />
-        <span class="ms-1">Troop Tracker</span>
+        <span class="ms-1">{{ __('layout.Troop Tracker') }}</span>
     </a>
 @endauth

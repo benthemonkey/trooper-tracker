@@ -8,7 +8,7 @@
         <span class="text-muted small">{{ $event_trooper->trooper->legal_name }}</span>
         @if(($can_moderate ?? false) && $event_trooper->trooper->is_untrusted)
             <br />
-            <span class="badge text-bg-warning">Needs verification</span>
+            <span class="badge text-bg-warning">{{ __('events.Needs verification') }}</span>
         @endif
         @if($event_trooper->added_by_trooper_id > 0)
             <br />
@@ -24,7 +24,7 @@
                 <x-input-select :property="'event_shift_station_id'"
                                 :options="$event_shift->event_shift_stations->pluck('name', 'id')->toArray()"
                                 :value="$event_trooper->event_shift_station_id"
-                                :placeholder="'-- Select Station --'"
+                                :placeholder="__('events.-- Select Station --')"
                                 hx-post="{{ route('events.signup-update-htmx', compact('event_trooper')) }}"
                                 hx-indicator="#transmission-bar-shift-{{ $event_trooper->event_shift->id }}"
                                 hx-select="#shift-container-{{ $event_trooper->event_shift->id }}"
@@ -51,7 +51,7 @@
                 <x-input-select :property="'organization_id'"
                                 :options="$eligible_orgs_for_change->pluck('name', 'id')->toArray()"
                                 :value="$event_trooper->organization_id"
-                                :placeholder="'-- Select Organization --'"
+                                :placeholder="__('events.-- Select Organization --')"
                                 hx-post="{{ route('events.signup-update-htmx', compact('event_trooper')) }}"
                                 hx-indicator="#transmission-bar-shift-{{ $event_trooper->event_shift->id }}"
                                 hx-select="#shift-container-{{ $event_trooper->event_shift->id }}"
@@ -61,7 +61,7 @@
             @elseif($show_org_picker && $eligible_orgs_for_change->count() === 1)
                 <div class="small text-muted">
                     <i class="fa fa-fw fa-building me-1"></i>
-                    Trooping as {{ $eligible_orgs_for_change->first()->name }}
+                    {{ __('events.Trooping as :organization', ['organization' => $eligible_orgs_for_change->first()->name]) }}
                 </div>
             @endif
             @php
@@ -70,7 +70,7 @@
             <x-input-select :property="'costume_id'"
                             :options="$costume_options"
                             :value="$event_trooper->is_attending_without_costume ? 'none' : $event_trooper->costume_id"
-                            :placeholder="'-- Select Costume --'"
+                            :placeholder="__('events.-- Select Costume --')"
                             hx-post="{{ route('events.signup-update-htmx', compact('event_trooper')) }}"
                             hx-indicator="#transmission-bar-shift-{{ $event_trooper->event_shift->id }}"
                             hx-select="#shift-container-{{ $event_trooper->event_shift->id }}"
@@ -80,7 +80,7 @@
             <x-input-select :property="'backup_costume_id'"
                             :options="$event_trooper->costumes"
                             :value="$event_trooper->backup_costume_id"
-                            :placeholder="'-- Select Backup Costume (optional) --'"
+                            :placeholder="__('events.-- Select Backup Costume (optional) --')"
                             hx-post="{{ route('events.signup-update-htmx', compact('event_trooper')) }}"
                             hx-indicator="#transmission-bar-shift-{{ $event_trooper->event_shift->id }}"
                             hx-swap="none"
@@ -88,10 +88,10 @@
         @else
             @if($event_trooper->costume === null)
                 @if($event_trooper->is_handler)
-                    Handler
+                    {{ __('events.Handler') }}
                 @else
                     <i class="small text-muted">
-                        No costume selected
+                        {{ __('events.No costume selected') }}
                     </i>
                 @endif
             @else
@@ -121,7 +121,7 @@
                 )
                 @if($event_trooper->status === \App\Enums\EventTrooperStatus::STAND_BY && $event_trooper->needsCostumeBeforeGoing())
                     <span class="{{ \App\Enums\EventTrooperStatus::PENDING->color() }} d-block mb-1">
-                        {{ to_title(\App\Enums\EventTrooperStatus::PENDING->name) }}
+                        {{ \App\Enums\EventTrooperStatus::PENDING->label() }}
                         <span class="d-none d-md-inline">
                             {!! \App\Enums\EventTrooperStatus::PENDING->iconTag() !!}
                         </span>
@@ -144,7 +144,7 @@
                                 <button type="submit"
                                         class="btn btn-sm btn-success">
                                     <i class="fa fa-fw fa-check me-1"></i>
-                                    Approve
+                                    {{ __('events.Approve') }}
                                 </button>
                             </form>
                         @endif
@@ -161,7 +161,7 @@
                                 <button type="submit"
                                         class="btn btn-sm btn-outline-danger">
                                     <i class="fa fa-fw fa-ban me-1"></i>
-                                    Reject
+                                    {{ __('events.Reject') }}
                                 </button>
                             </form>
                         @endif
@@ -180,7 +180,7 @@
             @elseif($event_shift->is_closed && $event_shift->shift_ends_at->isPast() && $event_trooper->isEligibleForAttendance() && ($can_moderate || $event_trooper->canMarkAttendance(Auth::user())))
                 @if(in_array($event_trooper->status, [\App\Enums\EventTrooperStatus::ATTENDED, \App\Enums\EventTrooperStatus::UNABLE_TO_ATTEND, \App\Enums\EventTrooperStatus::AWAITING_VERIFICATION], true))
                     <span class="{{ $event_trooper->status->color() }} d-block mb-1">
-                        {{ to_title($event_trooper->status->name) }}
+                        {{ $event_trooper->status->label() }}
                         <span class="d-none d-md-inline">
                             {!! $event_trooper->status->iconTag() !!}
                         </span>
@@ -189,17 +189,17 @@
                     <div class="input-group input-group-sm">
                         <a class="btn {{ $event_trooper->status === \App\Enums\EventTrooperStatus::ATTENDED ? 'btn-success' : 'btn-outline-success' }}"
                            href="{{ $event_trooper->getAttendanceUrl(\App\Enums\EventTrooperStatus::ATTENDED) }}">
-                            Made It
+                            {{ __('events.Made It') }}
                         </a>
                         <a class="btn {{ $event_trooper->status === \App\Enums\EventTrooperStatus::UNABLE_TO_ATTEND ? 'btn-danger' : 'btn-outline-danger' }}"
                            href="{{ $event_trooper->getAttendanceUrl(\App\Enums\EventTrooperStatus::UNABLE_TO_ATTEND) }}">
-                            Missed It
+                            {{ __('events.Missed It') }}
                         </a>
                     </div>                
                 @endif
             @elseif($event_trooper->status === \App\Enums\EventTrooperStatus::STAND_BY && $event_trooper->canCancel(Auth::user()))
                 <span class="{{ $event_trooper->status->color() }} d-block mb-1">
-                    {{ to_title($event_trooper->status->name) }}
+                    {{ $event_trooper->status->label() }}
                     <span class="d-none d-md-inline">
                         {!! $event_trooper->status->iconTag() !!}
                     </span>
@@ -213,7 +213,7 @@
                     <input type="hidden" name="status" value="{{ \App\Enums\EventTrooperStatus::CANCELLED->value }}" />
                     <button type="submit" class="btn btn-sm btn-outline-danger">
                         <i class="fa fa-fw fa-times me-1"></i>
-                        Cancel
+                        {{ __('events.Cancel') }}
                     </button>
                 </form>
             @elseif($event->hasLimits() && $event_trooper->canReSignUp(Auth::user()))
@@ -226,12 +226,12 @@
                     <input type="hidden" name="resign_up" value="1" />
                     <button type="submit" class="btn btn-sm btn-success">
                         <i class="fa fa-fw fa-redo me-1"></i>
-                        Re-Sign Up
+                        {{ __('events.Re-Sign Up') }}
                     </button>
                 </form>
             @else
                 <span class="{{ $event_trooper->status->color() }}">
-                    {{ to_title($event_trooper->status->name) }}
+                    {{ $event_trooper->status->label() }}
                     <span class="d-none d-md-inline">
                         {!! $event_trooper->status->iconTag() !!}
                     </span>
@@ -239,7 +239,7 @@
                 @if($event_trooper->status === \App\Enums\EventTrooperStatus::PENDING)
                     <br />
                     <i class="small text-muted">
-                        Select a costume, or mark attending without one, to confirm your spot.
+                        {{ __('events.Select a costume, or mark attending without one, to confirm your spot.') }}
                     </i>
                 @endif
             @endif
@@ -251,9 +251,10 @@
                 )
                 <br />
                 <i class="small text-muted">
-                    Approved by {{ $event_trooper->updated_by->display_name }}
                     @if($event_trooper->updated_at)
-                        on {{ $event_trooper->updated_at->format('M j, Y g:ia') }}
+                        {{ __('events.Approved by :name on :date', ['name' => $event_trooper->updated_by->display_name, 'date' => $event_trooper->updated_at->localFormat('M j, Y g:ia')]) }}
+                    @else
+                        {{ __('events.Approved by :name', ['name' => $event_trooper->updated_by->display_name]) }}
                     @endif
                 </i>
             @endif

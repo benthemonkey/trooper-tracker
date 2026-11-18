@@ -64,7 +64,7 @@ class OauthCallbackController extends PageController
 
         if ($request->has('error'))
         {
-            FlashType::warning('Login was cancelled or access was denied.');
+            FlashType::warning(__('auth.Login was cancelled or access was denied.'));
 
             return redirect()->route('auth.login');
         }
@@ -75,7 +75,7 @@ class OauthCallbackController extends PageController
         }
         catch (InvalidStateException)
         {
-            FlashType::warning('Your login session expired. Please try again.');
+            FlashType::warning(__('auth.Your login session expired. Please try again.'));
 
             return redirect()->route('auth.login');
         }
@@ -181,12 +181,14 @@ class OauthCallbackController extends PageController
 
     private function missingEmail(LoginProvider $login_provider): RedirectResponse
     {
-        $message = "Your {$login_provider->name()} account did not provide an email address. "
-            .'Please contact an administrator.';
+        $message = __(
+            'auth.Your :provider account did not provide an email address. Please contact an administrator.',
+            ['provider' => $login_provider->name()]
+        );
 
         if ($this->providers->required() === null)
         {
-            $message .= ' Or log in with email/password.';
+            $message .= ' '.__('auth.Or log in with email/password.');
         }
 
         return redirect()
