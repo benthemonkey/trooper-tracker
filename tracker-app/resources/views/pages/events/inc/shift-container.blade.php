@@ -1,9 +1,25 @@
-<div id="shift-container-{{ $event_shift->id }}">
+{{-- data-flash-target: messages from anything in the shift ("Saved.", "You're signed up.") show
+     at the top of the shift, next to what was changed, not at the top of the page --}}
+@php($is_my_shift = $event_shift->event_troopers->contains(\App\Models\EventTrooper::TROOPER_ID, Auth::id()))
+<div id="shift-container-{{ $event_shift->id }}"
+     data-flash-target="#shift-flash-{{ $event_shift->id }}">
     <span id="shift-{{ $event_shift->id }}"></span>
     <x-accordion-card :label="$event_shift->short_time_display"
-                      :open="$count_of_shifts == 1 || (isset($open) && $open === true)">
+                      :open="$count_of_shifts == 1 || $is_my_shift || (isset($open) && $open === true)">
         <x-transmission-bar :id="'shift-' . $event_shift->id" />
         @include('pages.events.inc.shift-header', compact('event_shift'))
+        <div id="shift-flash-{{ $event_shift->id }}"
+             class="shift-flash"
+             aria-live="polite"></div>
+        <div class="row mb-3">
+            <div class="col-12 shift-signup-actions">
+                @include('pages.events.inc.shift-add-trooper', compact('event_shift', 'event'))
+            </div>
+        </div>
+        @include('pages.events.inc.same-day-shift-note', compact('event_shift', 'event'))
+        @if($event_shift->event_troopers->isNotEmpty())
+            <hr />
+        @endif
         @foreach($event_shift->event_troopers as $event_trooper)
             @include('pages.events.inc.trooper', compact('event_trooper'))
         @endforeach
@@ -16,11 +32,9 @@
                 @endforeach
             @endif
         @endif
-        @include('pages.events.inc.same-day-shift-note', compact('event_shift', 'event'))
-        <div class="row my-3">
-            <div class="col-12 shift-signup-actions">
-                @include('pages.events.inc.shift-add-trooper', compact('event_shift', 'event'))
-            </div>
-        </div>
     </x-accordion-card>
 </div>
+@if(request()->hasHeader('HX-Request'))
+    {{-- swapped in out of band, so the summary at the top of the page follows this shift's change --}}
+    @include('pages.events.inc.my-signup-summary', ['event' => $event, 'oob' => true])
+@endif

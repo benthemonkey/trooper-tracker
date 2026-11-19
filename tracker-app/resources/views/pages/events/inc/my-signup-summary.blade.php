@@ -1,0 +1,98 @@
+{{--
+    "Your sign-up" near the top of the event page: where the trooper stands on each shift, with a
+    link down to that shift's panel (pages/events/inc/my-shift-signup.blade.php), or a Sign up
+    button that jumps to the roster. On phones the same answer sits in a bar along the bottom.
+    Every shift change sends this again out of band (pages/events/inc/shift-container.blade.php),
+    so it stays right without a reload.
+--}}
+@php
+    $my_signups = $event->signUpsFor(Auth::user());
+    $has_open_shift = $event->event_shifts->contains(fn ($event_shift) => $event_shift->is_open);
+    $my_active_signups = $my_signups->filter(fn ($event_trooper) => $event_trooper->status !== \App\Enums\EventTrooperStatus::CANCELLED);
+    $multiple_shifts = $event->event_shifts->count() > 1;
+@endphp
+<div id="my-signup-summary"
+     @if($oob ?? false) hx-swap-oob="true" @endif>
+    @if($my_signups->isNotEmpty())
+        <div class="my-signup-summary card mb-3">
+            <div class="card-body py-2">
+                <div class="fw-semibold mb-1">
+                    <i class="fa fa-fw fa-user-check me-1"></i>
+                    {{ __('events.Your sign-up') }}
+                </div>
+                @foreach($my_signups as $event_trooper)
+                    <div class="my-signup-summary__shift d-flex flex-wrap align-items-baseline py-1">
+                        @if($multiple_shifts)
+                            <span class="text-muted small me-3">{{ $event_trooper->event_shift->short_time_display }}</span>
+                        @endif
+                        <span class="{{ $event_trooper->status->color() }} fw-semibold me-3">
+                            {{ $event_trooper->status->label() }}
+                        </span>
+                        <span class="me-3">
+                            @if($event_trooper->costume !== null)
+                                {{ $event_trooper->costume->name }}
+                            @elseif($event_trooper->is_attending_without_costume)
+                                {{ __('events.Attending without a costume') }}
+                            @elseif($event_trooper->is_handler)
+                                {{ __('events.Handler') }}
+                            @else
+                                <i class="text-muted">{{ __('events.No costume picked yet') }}</i>
+                            @endif
+                            @if($event_trooper->backup_costume !== null)
+                                <span class="text-muted small ms-2">
+                                    <i class="fa fa-fw fa-box-archive"></i>
+                                    {{ $event_trooper->backup_costume->name }}
+                                </span>
+                            @endif
+                        </span>
+                        @if($event_trooper->event_shift->is_open)
+                            <a href="#my-shift-signup-{{ $event_trooper->event_shift_id }}"
+                               class="ms-auto small">
+                                {{ __('events.Change') }}
+                            </a>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @elseif($has_open_shift)
+        <div class="my-signup-summary card mb-3">
+            <div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+                <span>{{ __('events.You\'re not signed up for this event yet.') }}</span>
+                <a href="#mission-roster"
+                   class="btn btn-sm btn-success ms-auto">
+                    <i class="fa fa-fw fa-plus-circle me-1"></i>
+                    {{ __('events.Sign up') }}
+                </a>
+            </div>
+        </div>
+    @endif
+
+    @if($has_open_shift)
+        {{-- phones: the same answer along the bottom, wherever they've scrolled to --}}
+        <div class="my-signup-bar d-md-none">
+            @if($my_active_signups->isNotEmpty())
+                @php($first = $my_active_signups->first())
+                <span class="my-signup-bar__status">
+                    <span class="{{ $first->status->color() }} fw-semibold">{{ $first->status->label() }}</span>
+                    @if($my_active_signups->count() > 1)
+                        <span class="text-muted small">
+                            {{ trans_choice('events.+ :count more shift|+ :count more shifts', $my_active_signups->count() - 1) }}
+                        </span>
+                    @endif
+                </span>
+                <a href="#my-shift-signup-{{ $first->event_shift_id }}"
+                   class="btn btn-sm btn-outline-primary">
+                    {{ __('events.Your sign-up') }}
+                </a>
+            @else
+                <span class="my-signup-bar__status text-muted">{{ __('events.Not signed up') }}</span>
+                <a href="#mission-roster"
+                   class="btn btn-sm btn-success">
+                    <i class="fa fa-fw fa-plus-circle me-1"></i>
+                    {{ __('events.Sign up') }}
+                </a>
+            @endif
+        </div>
+    @endif
+</div>

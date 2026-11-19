@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\View\Composers;
 
+use App\Enums\EventStatus;
+use App\Enums\EventTrooperStatus;
 use App\Models\EventShiftStation;
+use App\Models\EventTrooper;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -24,7 +27,33 @@ class ShiftAddTrooperComposer
             ->pluck('organization_id')
             ->toArray();
 
+        //  the trooper's own place on this shift, shown as "Your sign-up" instead of the Sign Up form
+        $my_event_trooper = $event_shift->event_troopers->firstWhere(EventTrooper::TROOPER_ID, Auth::id());
+
+        //  the Sign Up form: their costume (preselected) and, where the event allows it, Tentative
+        $signup_costume_options = [];
+        $signup_costume_default = null;
+        $signup_status_options = [];
+
+        if ($my_event_trooper === null && $event_shift->is_open)
+        {
+            $signup_costume_options = $event_shift->costumeOptionsFor(Auth::user());
+            $signup_costume_default = $event_shift->defaultCostumeIdFor(Auth::user(), $signup_costume_options);
+
+            if ($event->status !== EventStatus::MANUAL_SELECTION && $event->allowsTentativeSignups() && !$event->hasLimits())
+            {
+                $signup_status_options = [
+                    EventTrooperStatus::GOING->value => EventTrooperStatus::GOING->label(),
+                    EventTrooperStatus::TENTATIVE->value => EventTrooperStatus::TENTATIVE->label(),
+                ];
+            }
+        }
+
         $view->with([
+            'my_event_trooper'               => $my_event_trooper,
+            'signup_costume_options'         => $signup_costume_options,
+            'signup_costume_default'         => $signup_costume_default,
+            'signup_status_options'          => $signup_status_options,
             'requires_mission_brief_ack'     => $event->require_mission_brief_ack,
             'has_required_mission_brief_ack' => !$event->require_mission_brief_ack || $event->hasMissionBriefAcknowledgementFor(Auth::user()),
             'eligible_orgs'                  => $eligible_orgs,
