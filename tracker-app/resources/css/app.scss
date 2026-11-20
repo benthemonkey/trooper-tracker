@@ -419,6 +419,26 @@ body:has(.my-signup-bar) .toast-container.bottom-0 {
     margin-bottom: calc(3rem + env(safe-area-inset-bottom));
 }
 
+//  phones: "Your sign-up"'s dropdowns and buttons fill the panel, like the Sign Up form's
+@media (max-width: 575.98px) {
+    .my-shift-signup__actions {
+        > .d-flex {
+            align-items: stretch !important;
+            flex-direction: column;
+        }
+
+        .form-select,
+        .btn,
+        .input-group {
+            width: 100% !important;
+        }
+
+        .input-group > .btn {
+            flex: 1 1 0;
+        }
+    }
+}
+
 //  the viewer's own roster row, which they change on "Your sign-up" instead
 .roster-row--mine {
     background: color-mix(in srgb, var(--bs-primary) 6%, transparent);
