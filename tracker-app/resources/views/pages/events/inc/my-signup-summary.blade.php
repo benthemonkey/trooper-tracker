@@ -20,39 +20,45 @@
                     <i class="fa fa-fw fa-user-check me-1"></i>
                     {{ __('events.Your sign-up') }}
                 </div>
-                @foreach($my_signups as $event_trooper)
-                    <div class="my-signup-summary__shift d-flex flex-wrap align-items-baseline py-1">
-                        @if($multiple_shifts)
-                            <span class="text-muted small me-3">{{ $event_trooper->event_shift->short_time_display }}</span>
-                        @endif
-                        <span class="{{ $event_trooper->status->color() }} fw-semibold me-3">
-                            {{ $event_trooper->status->label() }}
-                        </span>
-                        <span class="me-3">
-                            @if($event_trooper->costume !== null)
-                                {{ $event_trooper->costume->name }}
-                            @elseif($event_trooper->is_attending_without_costume)
-                                {{ __('events.Attending without a costume') }}
-                            @elseif($event_trooper->is_handler)
-                                {{ __('events.Handler') }}
-                            @else
-                                <i class="text-muted">{{ __('events.No costume picked yet') }}</i>
+                {{-- one grid for every shift (each row is a subgrid), so the times, statuses and
+                     costumes line up from one shift to the next; on phones each shift takes two lines --}}
+                <ul class="my-signup-summary__list list-unstyled mb-0 {{ $multiple_shifts ? 'my-signup-summary__list--shifts' : '' }}">
+                    @foreach($my_signups as $event_trooper)
+                        <li class="my-signup-summary__row">
+                            @if($multiple_shifts)
+                                <span class="my-signup-summary__time text-muted small">{{ $event_trooper->event_shift->short_time_display }}</span>
                             @endif
-                            @if($event_trooper->backup_costume !== null)
-                                <span class="text-muted small ms-2">
-                                    <i class="fa fa-fw fa-box-archive"></i>
-                                    {{ $event_trooper->backup_costume->name }}
-                                </span>
-                            @endif
-                        </span>
-                        @if($event_trooper->event_shift->is_open)
-                            <a href="#my-shift-signup-{{ $event_trooper->event_shift_id }}"
-                               class="ms-auto small">
-                                {{ __('events.Change') }}
-                            </a>
-                        @endif
-                    </div>
-                @endforeach
+                            <span class="my-signup-summary__status {{ $event_trooper->status->color() }} fw-semibold">
+                                {{ $event_trooper->status->label() }}
+                            </span>
+                            <span class="my-signup-summary__costume">
+                                @if($event_trooper->costume !== null)
+                                    {{ $event_trooper->costume->name }}
+                                @elseif($event_trooper->is_attending_without_costume)
+                                    {{ __('events.Attending without a costume') }}
+                                @elseif($event_trooper->is_handler)
+                                    {{ __('events.Handler') }}
+                                @else
+                                    <i class="text-muted">{{ __('events.No costume picked yet') }}</i>
+                                @endif
+                                @if($event_trooper->backup_costume !== null)
+                                    <span class="d-block text-muted small">
+                                        <i class="fa fa-fw fa-box-archive"></i>
+                                        {{ $event_trooper->backup_costume->name }}
+                                    </span>
+                                @endif
+                            </span>
+                            <span class="my-signup-summary__change">
+                                @if($event_trooper->event_shift->is_open)
+                                    <a href="#my-shift-signup-{{ $event_trooper->event_shift_id }}"
+                                       class="small">
+                                        {{ __('events.Change') }}
+                                    </a>
+                                @endif
+                            </span>
+                        </li>
+                    @endforeach
+                </ul>
             </div>
         </div>
     @elseif($has_open_shift)
