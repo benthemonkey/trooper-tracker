@@ -408,13 +408,15 @@ input.searching {
     }
 }
 
-//  messages from a shift ("Saved.", "You're signed up.") show here, beside what changed
-.shift-flash:empty {
-    display: none;
+//  toasts (ToastMessages.svelte) float over the page: Bootstrap's see-through toast background let
+//  the text underneath show through the alert
+.toast {
+    --bs-toast-bg: var(--bs-body-bg);
 }
 
-.shift-flash .alert {
-    margin-bottom: 0.75rem;
+//  phones: toasts sit along the bottom, so lift them over the "Your sign-up" bar
+body:has(.my-signup-bar) .toast-container.bottom-0 {
+    margin-bottom: calc(3rem + env(safe-area-inset-bottom));
 }
 
 //  the viewer's own roster row, which they change on "Your sign-up" instead

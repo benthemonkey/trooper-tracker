@@ -60,13 +60,13 @@ test.describe('signing up', () => {
         const signedUp = page.waitForResponse((r) => r.url().includes('/events/signup/') && r.request().method() === 'POST');
         await signUp.click();
         await signedUp;
-        await expect(shift(page).getByText("You're signed up.")).toBeVisible();
+        await expect(page.locator('.toast:visible').getByText("You're signed up.")).toBeVisible();
         await expect(shift(page).getByText('1 / 10 going')).toBeVisible();
         await expect(shift(page).locator('[id^="my-shift-signup-"]')).toContainText('Going');
         await expect(page.locator('#my-signup-summary')).toContainText(seeded.trooperCostume);
 
         await choose(page, 'backup_costume_id', { label: seeded.trooperCostume });
-        await expect(shift(page).getByText('Saved.')).toBeVisible();
+        await expect(page.locator('.toast:visible').getByText('Saved.')).toBeVisible();
 
         // A guest, by name.
         await shift(page).getByRole('button', { name: 'Add a Guest' }).click();
