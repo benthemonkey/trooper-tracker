@@ -156,6 +156,11 @@
         {{ __('events.Once you\'re going, and if the event allows it, these buttons add a friend who has a tracker account, or a guest who doesn\'t. They show up here, where you change or cancel their sign-ups like your own.') }}
     </template>
     <template data-tour-step
+              data-target=".my-signup-summary"
+              data-title="{{ __('events.Your sign-up at a glance') }}">
+        {{ __('events.Near the top of the event page you can see whether you\'re signed up, for every shift, without scrolling down to the roster.') }}
+    </template>
+    <template data-tour-step
               data-target="[data-tour-example='after']"
               data-title="{{ __('events.After the troop') }}">
         {!! __('events.Come back and press <b>Made It</b> or <b>Missed It</b> on your sign-up.') !!}
