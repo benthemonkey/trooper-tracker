@@ -29,7 +29,7 @@
         <div class="shift-links__row">
             @if($can_add_friend)
                 <div id="friend-signup-action-{{ $shift_id }}">
-                    <div class="shift-friend-trigger">
+                    <div class="shift-links__friend">
                         <button type="button"
                                 class="btn btn-link p-0"
                                 hx-get="{{ route('pickers.trooper', ['property' => 'add-shift-friend-' . $shift_id, 'event' => 'trooper:selected', 'picker_mode' => App\Enums\TrooperSearchMode::FRIENDS->value]) }}"
@@ -44,7 +44,7 @@
             @endif
             @if($can_add_guest)
                 <button type="button"
-                        class="btn btn-link p-0 shift-signup-guest"
+                        class="btn btn-link p-0"
                         x-on:click="addingGuest = !addingGuest; $nextTick(() => addingGuest && $refs.guestName.focus())">
                     {{ __('events.Add a guest') }}
                 </button>
@@ -84,7 +84,7 @@
                  hx-trigger="trooper:selected[event.detail.property == 'add-shift-friend-{{ $shift_id }}'] from:document"
                  hx-target="#add-trooper-step2-{{ $shift_id }}"
                  hx-swap="innerHTML"
-                 hx-on::before-request="document.querySelector('#friend-signup-action-{{ $shift_id }} .shift-friend-trigger').classList.add('d-none')"
+                 hx-on::before-request="document.querySelector('#friend-signup-action-{{ $shift_id }} .shift-links__friend').classList.add('d-none')"
                  hx-indicator="#transmission-bar-shift-{{ $shift_id }}"></div>
         @endif
 

@@ -59,7 +59,7 @@
         </button>
         <button class="btn btn-link btn-sm text-muted"
                 type="button"
-                onclick="document.getElementById('add-trooper-step2-{{ $event_shift->id }}').innerHTML = ''; document.querySelector('#friend-signup-action-{{ $event_shift->id }} .shift-friend-trigger').classList.remove('d-none')">
+                onclick="document.getElementById('add-trooper-step2-{{ $event_shift->id }}').innerHTML = ''; document.querySelector('#friend-signup-action-{{ $event_shift->id }} .shift-links__friend').classList.remove('d-none')">
             {{ __('events.Never mind') }}
         </button>
         @if($event_shift->event->requiresCostume())
