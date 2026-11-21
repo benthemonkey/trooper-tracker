@@ -71,6 +71,11 @@
                     @endif
                 </div>
                 <div class="col-12 col-md-5 align-self-start text-md-end roster-row__editor-actions">
+                    @if($event_trooper->canUpdateCostume($viewer) && ($event->requiresCostume() || $event_shift->usesStations()))
+                        {{-- the height of the picker's label, so plans and Cancel line up with the picker beside them --}}
+                        <span class="form-label small mb-1 d-none d-md-block invisible"
+                              aria-hidden="true">&nbsp;</span>
+                    @endif
                     @include('pages.events.inc.trooper-status-controls', ['event_trooper' => $event_trooper, 'part' => 'edit'])
                 </div>
             </div>
