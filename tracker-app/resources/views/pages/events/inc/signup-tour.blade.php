@@ -13,6 +13,8 @@
         [\App\Enums\EventTrooperStatus::CANCELLED->value => true]
     );
     $tour_going = \App\Enums\EventTrooperStatus::GOING;
+    //  no costume to pick on an event type troopers don't wear one to: those steps drop out
+    $tour_costumes = $event->requiresCostume();
 @endphp
 <div x-data="Events.signupTour({ autoStart: @js($tour_auto_start), storageKey: @js('tt.signupTourSeen.' . Auth::id()) })"
      x-on:signup-tour:start.window="start()"
