@@ -153,6 +153,11 @@ main()
 
     say "clear caches, restart queue"
     "$PHP" artisan optimize:clear --no-interaction
+    # Cached routes save every request from loading and registering the route files: about half
+    # the time of a small request such as the trooper search, measured locally. Enabling or
+    # disabling a plugin rebuilds the cache (PluginManager::stateChanged). Never cache config
+    # here: the refresh's A/B database switch relies on .env and env vars being read live.
+    "$PHP" artisan route:cache --no-interaction
     "$PHP" artisan queue:restart --no-interaction
 
     if [ "$refresh" = 1 ]

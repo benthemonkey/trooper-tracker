@@ -36,6 +36,8 @@ Any failure stops before step 6, so the site keeps serving the previous copy. Ou
 Settings are environment variables with Midwest defaults (`TT_PHP`, `TT_LEGACY_DB`,
 `TT_DB_A`/`TT_DB_B`, `TT_PHP_MEMORY`, `TT_MYSQLDUMP_OPTS`, ...; see the top of the script).
 `TT_KEEP_LEGACY=1` keeps the legacy tables for debugging. Don't run `config:cache` on staging.
+`tt-staging-update.sh` does cache routes (`route:cache`, after `optimize:clear`): that roughly halves
+small requests, and plugin changes rebuild it.
 
 ## Install
 
