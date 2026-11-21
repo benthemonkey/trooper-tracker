@@ -1,6 +1,6 @@
 {{-- data-flash-target: messages from anything in the shift ("Saved.", "You're signed up.") show
      as toasts (resources/js/custom/toasts.js), so they don't push the page down --}}
-@php($is_my_shift = $event_shift->event_troopers->contains(\App\Models\EventTrooper::TROOPER_ID, Auth::id()))
+@php($is_my_shift = $event_shift->isSignedUp(Auth::user()))
 <div id="shift-container-{{ $event_shift->id }}"
      data-flash-target="toast">
     <span id="shift-{{ $event_shift->id }}"></span>

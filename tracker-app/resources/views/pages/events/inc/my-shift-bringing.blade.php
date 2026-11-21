@@ -44,10 +44,7 @@
                         <a href="{{ route('service-records.trooper', ['trooper' => $event_trooper->trooper->id]) }}">
                             {{ $event_trooper->trooper->display_name }}
                         </a>
-                        <span class="{{ $friend_status->color() }}">
-                            {{ $friend_status->label() }}
-                            {!! $friend_status->iconTag() !!}
-                        </span>
+                        <x-sign-up-status :status="$friend_status" />
                     </div>
                     <div class="row g-2">
                         <div class="col-12 col-md-6">
@@ -69,10 +66,7 @@
                         <div class="col-12 col-md-6 d-flex flex-wrap align-items-center gap-2">
                             <span>{{ $event_guest->name }}</span>
                             <span class="badge text-bg-secondary">{{ __('events.Guest') }}</span>
-                            <span class="{{ $guest_status->color() }}">
-                                {{ $guest_status->label() }}
-                                {!! $guest_status->iconTag() !!}
-                            </span>
+                            <x-sign-up-status :status="$guest_status" />
                         </div>
                         <div class="col-12 col-md-6 text-md-end my-shift-signup__actions">
                             @if($event_shift->is_open && $event_guest->canUpdateStatus($viewer))

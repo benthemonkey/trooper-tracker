@@ -28,9 +28,7 @@
                             @if($multiple_shifts)
                                 <span class="my-signup-summary__time text-muted small">{{ $event_trooper->event_shift->short_time_display }}</span>
                             @endif
-                            <span class="my-signup-summary__status {{ $event_trooper->status->color() }} fw-semibold">
-                                {{ $event_trooper->status->label() }}
-                            </span>
+                            <x-sign-up-status :status="$event_trooper->status" class="my-signup-summary__status fw-semibold" />
                             <span class="my-signup-summary__costume">
                                 @if($event_trooper->costume !== null)
                                     {{ $event_trooper->costume->name }}
@@ -80,7 +78,7 @@
             @if($my_active_signups->isNotEmpty())
                 @php($first = $my_active_signups->first())
                 <span class="my-signup-bar__status">
-                    <span class="{{ $first->status->color() }} fw-semibold">{{ $first->status->label() }}</span>
+                    <x-sign-up-status :status="$first->status" class="fw-semibold" />
                     @if($my_active_signups->count() > 1)
                         <span class="text-muted small">
                             {{ trans_choice('events.+ :count more shift|+ :count more shifts', $my_active_signups->count() - 1) }}
