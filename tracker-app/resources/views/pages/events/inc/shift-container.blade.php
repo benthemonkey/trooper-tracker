@@ -4,7 +4,8 @@
 <div id="shift-container-{{ $event_shift->id }}"
      data-flash-target="toast">
     <span id="shift-{{ $event_shift->id }}"></span>
-    <x-accordion-card :label="$event_shift->short_time_display"
+    <x-accordion-card :id="'shift-card-' . $event_shift->id"
+                      :label="$event_shift->short_time_display"
                       :open="$count_of_shifts == 1 || $is_my_shift || (isset($open) && $open === true)">
         <x-transmission-bar :id="'shift-' . $event_shift->id" />
         @include('pages.events.inc.shift-header', compact('event_shift'))
