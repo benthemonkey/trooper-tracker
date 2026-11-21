@@ -75,7 +75,7 @@
         </div>
 
         @if($can_add_friend)
-            {{-- once a trooper is picked in the modal: their costume (and club or station when needed) and Sign Up --}}
+            {{-- once a trooper is picked in the modal: their choices and Confirm (add-trooper-form.blade.php) --}}
             <div id="add-trooper-step2-{{ $shift_id }}"
                  class="friend-signup-step"></div>
             <div class="d-none"
@@ -84,26 +84,26 @@
                  hx-trigger="trooper:selected[event.detail.property == 'add-shift-friend-{{ $shift_id }}'] from:document"
                  hx-target="#add-trooper-step2-{{ $shift_id }}"
                  hx-swap="innerHTML"
-                 hx-on::before-request="document.getElementById('add-trooper-step2-{{ $shift_id }}').classList.add('shift-signup-secondary--confirming'); document.querySelector('#friend-signup-action-{{ $shift_id }} .shift-friend-trigger').classList.add('d-none')"
+                 hx-on::before-request="document.querySelector('#friend-signup-action-{{ $shift_id }} .shift-friend-trigger').classList.add('d-none')"
                  hx-indicator="#transmission-bar-shift-{{ $shift_id }}"></div>
         @endif
 
         @if($can_add_guest)
-            {{-- a guest has no tracker account: just their name --}}
-            <div class="shift-signup-secondary--confirming friend-signup-confirmation"
+            {{-- a guest has no tracker account: just their name, in the same box as your own Sign up --}}
+            <div class="shift-signup-primary shift-signup-primary--form"
                  x-show="addingGuest"
                  x-cloak>
-                <div class="small fw-semibold mb-2">{{ __('events.Add a guest without a tracker account') }}</div>
-                <div class="friend-signup-confirmation__fields">
-                    <input type="text"
-                           id="guest-name-{{ $shift_id }}"
-                           name="guest_names"
-                           class="form-control form-control-sm"
-                           maxlength="255"
-                           placeholder="{{ __('events.Guest\'s name') }}"
-                           aria-label="{{ __('events.Guest\'s name') }}"
-                           x-ref="guestName"
-                           x-model="guestName" />
+                <span class="shift-signup-primary__label">{{ __('events.Add a guest without a tracker account') }}</span>
+                <input type="text"
+                       id="guest-name-{{ $shift_id }}"
+                       name="guest_names"
+                       class="form-control form-control-sm"
+                       maxlength="255"
+                       placeholder="{{ __('events.Guest\'s name') }}"
+                       aria-label="{{ __('events.Guest\'s name') }}"
+                       x-ref="guestName"
+                       x-model="guestName" />
+                <div class="shift-signup__confirm">
                     <button class="btn btn-sm btn-success htmx-disable"
                             hx-post="{{ route('events.guest-signup-htmx', compact('event_shift')) }}"
                             hx-include="#guest-name-{{ $shift_id }}"
@@ -112,7 +112,7 @@
                             hx-swap="outerHTML"
                             hx-indicator="#transmission-bar-shift-{{ $shift_id }}, closest .btn"
                             x-bind:disabled="guestName.trim() === ''">
-                        {{ __('events.Add Guest') }}
+                        {{ __('events.Confirm') }}
                     </button>
                     <button class="btn btn-link btn-sm text-muted"
                             type="button"

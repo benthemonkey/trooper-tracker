@@ -97,11 +97,12 @@
         </div>
     </div>
     @if($can_edit && !$is_cancelled)
+        {{-- no id on the element x-show hides (see trooper.blade.php) --}}
         <div class="roster-row__editor text-md-end"
-             id="roster-guest-editor-{{ $event_guest->id }}"
              x-show="editing"
              x-cloak>
-            <form hx-post="{{ $guest_update_url }}"
+            <form id="roster-guest-editor-{{ $event_guest->id }}"
+                  hx-post="{{ $guest_update_url }}"
                   hx-confirm="{{ __('events.Cancel :name\'s sign-up for this shift?', ['name' => $event_guest->name]) }}"
                   hx-indicator="#transmission-bar-shift-{{ $guest_shift_id }}"
                   hx-select="#shift-container-{{ $guest_shift_id }}"

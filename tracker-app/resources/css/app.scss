@@ -459,6 +459,16 @@ input.searching {
     }
 }
 
+//  the shift's link-style actions read as links, not as the theme's uppercase buttons (:is()
+//  takes the id's weight, enough to beat the theme's button rule)
+:is(#mission-roster, #mission-roster ~ *) {
+    .btn-link {
+        font-weight: 400;
+        letter-spacing: normal;
+        text-transform: none;
+    }
+}
+
 .shift-signup {
     padding: 0.75rem 0;
     scroll-margin-top: 5rem;
@@ -529,7 +539,8 @@ input.searching {
             margin-right: 0;
         }
 
-        .form-select {
+        .form-select,
+        .form-control {
             flex: 1 1 12rem;
             max-width: none;
         }

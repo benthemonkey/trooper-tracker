@@ -58,10 +58,12 @@
         </div>
     </div>
     @if($can_edit)
+        {{-- no id on the element x-show hides: htmx "settles" a swapped-in element that keeps its
+             id by copying the old one's attributes over and back, which wipes Alpine's display:none --}}
         <div class="roster-row__editor"
-             id="roster-row-editor-{{ $event_trooper->id }}"
              x-show="editing"
              @unless($opens_itself) x-cloak @endunless>
+            <div id="roster-row-editor-{{ $event_trooper->id }}">
             <div class="row g-3">
                 <div class="col-12 col-md-7">
                     @if($event_trooper->canUpdateCostume($viewer))
@@ -73,6 +75,7 @@
                 </div>
             </div>
             <div class="small text-muted mt-2">{{ __('events.Changes save as you pick them.') }}</div>
+            </div>
         </div>
     @endif
 </div>

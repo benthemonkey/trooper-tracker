@@ -223,6 +223,7 @@ return [
     'Photo moved to Instructional Uploads.' => 'Photo moved to Instructional Uploads.',
     'Photo moved to Mission Review.' => 'Photo moved to Mission Review.',
     'Pick the squads you troop with. Picking a club or garrison shows all its squads too, and picking a squad also shows events its garrison and club host.' => 'Pick the squads you troop with. Picking a club or garrison shows all its squads too, and picking a squad also shows events its garrison and club host.',
+    'Pick their costume, then press Confirm.' => 'Pick their costume, then press Confirm.',
     'Pick their costume, then press Sign Up.' => 'Pick their costume, then press Sign Up.',
     'Pick your costume, then press Confirm.' => 'Pick your costume, then press Confirm.',
     'Pick your costume, then press Sign Up.' => 'Pick your costume, then press Sign Up.',

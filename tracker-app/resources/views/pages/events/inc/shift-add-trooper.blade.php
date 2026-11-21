@@ -84,6 +84,7 @@
                                id="org-picker-{{ $event_shift->id }}"
                                name="organization_id"
                                value="{{ $eligible_orgs->first()->id }}" />
+                        <span class="small text-muted w-100">{{ __('events.Trooping as :organization', ['organization' => $eligible_orgs->first()->name]) }}</span>
                     @endif
                 @endif
                 @if($shift_uses_stations)
