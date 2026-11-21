@@ -84,7 +84,7 @@
                  hx-trigger="trooper:selected[event.detail.property == 'add-shift-friend-{{ $shift_id }}'] from:document"
                  hx-target="#add-trooper-step2-{{ $shift_id }}"
                  hx-swap="innerHTML"
-                 hx-on::before-request="document.querySelector('#friend-signup-action-{{ $shift_id }} .shift-links__friend').classList.add('d-none')"
+                 hx-on::before-request="document.getElementById('friend-signup-action-{{ $shift_id }}').classList.add('d-none')"
                  hx-indicator="#transmission-bar-shift-{{ $shift_id }}"></div>
         @endif
 

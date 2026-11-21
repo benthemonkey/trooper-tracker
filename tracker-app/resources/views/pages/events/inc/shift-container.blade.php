@@ -31,6 +31,18 @@
                 @endforeach
             @endif
 
+            <div class="shift-signup-actions">
+                @include('pages.events.inc.shift-add-trooper', compact('event_shift', 'event'))
+            </div>
+
+            {{-- in the same grid, so the guests' columns line up with the troopers' --}}
+            @if(($event->guests_allowed === null || $event->guests_allowed > 0) && $event_shift->event_guests->count() > 0)
+                <div class="roster__heading">{{ __('events.Guests') }}</div>
+                @foreach($event_shift->event_guests as $event_guest)
+                    @include('pages.events.inc.guest', compact('event_guest'))
+                @endforeach
+            @endif
+
             @if($roster_cancelled->isNotEmpty())
                 <div class="roster__heading">{{ __('events.Cancelled') }}</div>
                 @foreach($roster_cancelled as $event_trooper)
@@ -38,21 +50,6 @@
                 @endforeach
             @endif
         </div>
-
-        <div class="shift-signup-actions">
-            @include('pages.events.inc.shift-add-trooper', compact('event_shift', 'event'))
-        </div>
-
-        @if($event->guests_allowed === null || $event->guests_allowed > 0)
-            @if($event_shift->event_guests->count() > 0)
-                <div class="roster">
-                    <div class="roster__heading">{{ __('events.Guests') }}</div>
-                    @foreach($event_shift->event_guests as $event_guest)
-                        @include('pages.events.inc.guest', compact('event_guest'))
-                    @endforeach
-                </div>
-            @endif
-        @endif
 
         @include('pages.events.inc.shift-links', compact('event_shift', 'event'))
     </x-accordion-card>

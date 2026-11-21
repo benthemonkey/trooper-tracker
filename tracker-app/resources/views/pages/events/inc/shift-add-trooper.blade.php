@@ -140,7 +140,7 @@
                                 x-cloak>
                             <option value="">{{ __('events.-- No backup costume --') }}</option>
                             @foreach($signup_costume_options as $costume_id => $costume_name)
-                                <option value="{{ $costume_id }}">{{ $costume_name }}</option>
+                                <option value="{{ $costume_id }}">{{ __('events.Backup: :costume', ['costume' => $costume_name]) }}</option>
                             @endforeach
                         </select>
                     </div>

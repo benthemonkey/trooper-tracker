@@ -31,7 +31,7 @@
             @if(($can_moderate ?? false) && $event_trooper->trooper->is_untrusted)
                 <span class="badge text-bg-warning">{{ __('events.Needs verification') }}</span>
             @endif
-            @if($event_trooper->added_by_trooper_id > 0 && $event_trooper->added_by_trooper)
+            @if($event_trooper->added_by_trooper_id > 0 && $event_trooper->added_by_trooper_id !== $event_trooper->trooper_id && $event_trooper->added_by_trooper)
                 <div class="text-muted small fst-italic">
                     {{ __('events.Added by :name', ['name' => $event_trooper->added_by_trooper->display_name]) }}
                 </div>

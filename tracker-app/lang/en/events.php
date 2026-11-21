@@ -29,6 +29,7 @@ return [
     ':count Shift Available|:count Shifts Available' => ':count Shift Available|:count Shifts Available',
     ':count shift available|:count shifts available' => ':count shift available|:count shifts available',
     ':count spot left|:count spots left' => ':count spot left|:count spots left',
+    ':count tentative|:count tentative' => ':count tentative|:count tentative',
     ':count trooper|:count troopers' => ':count trooper|:count troopers',
     ':going of :allowed troopers' => ':going of :allowed troopers',
     ':name is on the shift. Pick their costume on their row to confirm the spot.' => ':name is on the shift. Pick their costume on their row to confirm the spot.',

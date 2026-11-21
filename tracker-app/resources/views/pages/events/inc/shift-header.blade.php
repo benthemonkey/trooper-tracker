@@ -2,7 +2,8 @@
 @php
     $spots_left = $event_shift->trooperSpotsLeft();
     $stand_by_count = $event_shift->standByCount();
-    $count_going = $event_shift->event_troopers->filter(fn ($event_trooper) => $event_trooper->intendsToGo())->count();
+    $count_going = $event_shift->event_troopers->filter(fn ($event_trooper) => $event_trooper->status === \App\Enums\EventTrooperStatus::GOING)->count();
+    $count_tentative = $event_shift->event_troopers->filter(fn ($event_trooper) => $event_trooper->status === \App\Enums\EventTrooperStatus::TENTATIVE)->count();
 @endphp
 <div class="shift-header">
     <span>
@@ -17,9 +18,9 @@
             </span>
         @elseif($spots_left !== null)
             {{-- counted the way the limit counts: troopers going, not handlers or tentative --}}
-            <span class="text-muted">{{ __('events.:count of :limit going', ['count' => $event->troopers_allowed - $spots_left, 'limit' => $event->troopers_allowed]) }}</span>
+            <span class="text-muted">{{ __('events.:count of :limit going', ['count' => $event->troopers_allowed - $spots_left, 'limit' => $event->troopers_allowed]) }}@if($count_tentative > 0) · {{ trans_choice('events.:count tentative|:count tentative', $count_tentative) }}@endif</span>
         @else
-            <span class="text-muted">{{ trans_choice('events.:count going|:count going', $count_going) }}</span>
+            <span class="text-muted">{{ trans_choice('events.:count going|:count going', $count_going) }}@if($count_tentative > 0) · {{ trans_choice('events.:count tentative|:count tentative', $count_tentative) }}@endif</span>
         @endif
     @endif
 </div>
