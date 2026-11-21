@@ -345,7 +345,7 @@ class EventDisplayControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('name="costume_id"', false);
-        $response->assertSee('data-tour-example="pending"', false);
+        $response->assertSee('data-tour-example="backup"', false);
     }
 
     public function test_invoke_leaves_out_costumes_when_the_event_type_needs_none(): void
@@ -358,7 +358,28 @@ class EventDisplayControllerTest extends TestCase
         $response->assertDontSee('name="costume_id"', false);
         $response->assertDontSee('name="backup_costume_id"', false);
         //  the tour's "pick your costume" steps drop out with their example row
-        $response->assertDontSee('data-tour-example="pending"', false);
+        $response->assertDontSee('data-tour-example="backup"', false);
+        $response->assertDontSee('id="costume-picker-', false);
+    }
+
+    public function test_invoke_offers_sign_up_without_a_costume_when_the_event_type_needs_none(): void
+    {
+        $trooper = Trooper::factory()->asActive()->withVerifiedEmail()->create();
+        $organization = Organization::factory()->create();
+        TrooperAssignment::factory()->forTrooper($trooper)->forOrganization($organization)->asMember()->create();
+        $event = Event::factory()->withOrganization($organization)->create([
+            Event::EVENT_TYPE_ID => EventType::factory()->withoutCostumes()->create()->id,
+        ]);
+        EventOrganization::factory()->forEvent($event)->forOrganization($organization)->create([
+            EventOrganization::CAN_ATTEND => true,
+        ]);
+        $event_shift = EventShift::factory()->forEvent($event)->create();
+
+        $response = $this->actingAs($trooper)->get(route('events.display', ['event' => $event->id]));
+
+        $response->assertOk();
+        $response->assertSee(route('events.signup-htmx', ['event_shift' => $event_shift->id]), false);
+        $response->assertDontSee('id="costume-picker-'.$event_shift->id.'"', false);
     }
 
     /**
