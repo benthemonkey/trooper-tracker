@@ -312,7 +312,7 @@ class SignUpHtmxControllerTest extends TestCase
             EventTrooper::COSTUME_ID => null,
             EventTrooper::STATUS => EventTrooperStatus::PENDING->value,
         ]);
-        $this->assertSame("You're on the shift. Pick a costume below to confirm your spot.", $this->flash($response)['message']);
+        $this->assertSame("You're on the shift. Select a costume, or mark attending without one, to confirm your spot.", $this->flash($response)['message']);
     }
 
     public function test_invoke_signs_up_as_tentative_when_the_event_allows_it(): void
