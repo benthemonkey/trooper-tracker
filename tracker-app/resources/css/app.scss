@@ -427,7 +427,57 @@ input.searching {
 
 .roster-row__editor {
     grid-column: 2 / -1;
+}
+
+//  the padding sits inside the drawer, so none of it shows while x-collapse keeps it shut
+.roster-row__drawer {
     padding: 0.75rem 0 0.25rem;
+}
+
+//  rows with a drawer: the whole row is a target, and Edit's chevron turns over once it's open
+.roster-row--editable > .roster-row__main {
+    cursor: pointer;
+}
+
+.roster-row--editable:hover {
+    background: color-mix(in srgb, var(--bs-body-color) 4%, transparent);
+    border-radius: var(--bs-border-radius);
+}
+
+.roster-row--mine.roster-row--editable:hover {
+    background: color-mix(in srgb, var(--bs-success) 12%, transparent);
+}
+
+.roster-row__toggle {
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.roster-row__toggle-labels {
+    display: inline-grid;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+
+    > span {
+        grid-area: 1 / 1;
+        text-align: end;
+    }
+}
+
+.roster-row__chevron {
+    font-size: 0.7em;
+    margin-left: 0.25rem;
+    transition: transform 0.2s ease;
+}
+
+.roster-row--open .roster-row__chevron {
+    transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .roster-row__chevron {
+        transition: none;
+    }
 }
 
 //  the viewer's own row

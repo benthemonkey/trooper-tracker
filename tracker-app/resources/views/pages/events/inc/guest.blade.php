@@ -14,12 +14,14 @@
         ? \App\Enums\EventGuestStatus::STAND_BY
         : \App\Enums\EventGuestStatus::GOING;
 @endphp
-<div class="roster-row guest-status-{{ $event_guest->status->value }}"
+<div class="roster-row guest-status-{{ $event_guest->status->value }} {{ $can_edit && !$is_cancelled ? 'roster-row--editable' : '' }}"
      id="roster-guest-{{ $event_guest->id }}"
      @if($can_edit && !$is_cancelled)
          x-data="Events.rosterRow('guest-{{ $event_guest->id }}', false)"
+         x-bind:class="{ 'roster-row--open': editing }"
      @endif>
-    <div class="roster-row__main">
+    <div class="roster-row__main"
+         @if($can_edit && !$is_cancelled) x-on:click="toggleFrom($event)" @endif>
         <span class="roster-row__number"></span>
         <div class="roster-row__who">
             {{ $event_guest->name }}
@@ -85,13 +87,17 @@
         <div class="roster-row__edit">
             @if($can_edit && !$is_cancelled)
                 <button type="button"
-                        class="btn btn-link btn-sm p-0"
+                        class="btn btn-link btn-sm p-0 roster-row__toggle"
                         aria-controls="roster-guest-editor-{{ $event_guest->id }}"
                         x-bind:aria-expanded="editing"
                         x-on:click="editing = !editing">
-                    <span x-show="!editing">{{ __('events.Edit') }}</span>
-                    <span x-show="editing"
-                          x-cloak>{{ __('events.Done') }}</span>
+                    {{-- both words in one spot, the other one hidden, so the column keeps its width --}}
+                    <span class="roster-row__toggle-labels">
+                        <span x-bind:class="{ 'invisible': editing }">{{ __('events.Edit') }}</span>
+                        <span class="invisible"
+                              x-bind:class="{ 'invisible': !editing }">{{ __('events.Done') }}</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-down roster-row__chevron" aria-hidden="true"></i>
                 </button>
             @endif
         </div>
@@ -100,8 +106,10 @@
         {{-- no id on the element x-show hides (see trooper.blade.php) --}}
         <div class="roster-row__editor text-md-end"
              x-show="editing"
+             x-collapse
              x-cloak>
-            <form id="roster-guest-editor-{{ $event_guest->id }}"
+            <form class="roster-row__drawer"
+                  id="roster-guest-editor-{{ $event_guest->id }}"
                   hx-post="{{ $guest_update_url }}"
                   hx-confirm="{{ __('events.Cancel :name\'s sign-up for this shift?', ['name' => $event_guest->name]) }}"
                   hx-indicator="#transmission-bar-shift-{{ $guest_shift_id }}"
