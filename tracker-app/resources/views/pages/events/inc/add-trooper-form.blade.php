@@ -63,7 +63,7 @@
         </button>
         <button class="btn btn-sm btn-outline-secondary"
                 type="button"
-                onclick="document.getElementById('add-trooper-step2-{{ $event_shift->id }}').innerHTML=''; document.getElementById('friend-signup-action-{{ $event_shift->id }}').classList.remove('shift-signup-secondary--confirming'); document.querySelector('#friend-signup-action-{{ $event_shift->id }} .shift-friend-trigger').classList.remove('d-none')">
+                onclick="const step = document.getElementById('add-trooper-step2-{{ $event_shift->id }}'); step.innerHTML = ''; step.classList.remove('shift-signup-secondary--confirming'); document.querySelector('#friend-signup-action-{{ $event_shift->id }} .shift-friend-trigger').classList.remove('d-none')">
             {{ __('events.Cancel') }}
         </button>
     </div>

@@ -354,13 +354,144 @@ input.searching {
     }
 }
 
-// Attendee-facing shift signup actions
-.shift-signup-actions {
-    align-items: stretch;
+//  a shift (pages/events/inc/shift-container.blade.php): how full it is, then the roster in
+//  sign-up order, numbered, with Sign up after it and the quieter actions as links under that
+.shift-header {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.roster {
+    margin-bottom: 0.5rem;
+}
+
+.roster__heading {
+    border-bottom: 1px solid var(--bs-border-color);
+    color: var(--bs-secondary-color);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-top: 1rem;
+    padding-bottom: 0.25rem;
+    text-transform: uppercase;
+}
+
+//  number, who, costume, status, Edit; the Edit area opens under the row, in place
+.roster-row {
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+    padding: 0.6rem 0.5rem;
+    scroll-margin-top: 5rem;
+}
+
+.roster-row__main {
+    align-items: baseline;
+    column-gap: 0.75rem;
+    display: grid;
+    grid-template-columns: 1.75rem minmax(0, 1.2fr) minmax(0, 1fr) auto 3rem;
+}
+
+.roster-row__number {
+    font-size: 0.875rem;
+    text-align: end;
+}
+
+.roster-row__status,
+.roster-row__edit {
+    text-align: end;
+}
+
+.roster-row__editor {
+    padding: 0.75rem 0 0.25rem 2.5rem;
+}
+
+//  the viewer's own row
+.roster-row--mine {
+    background: color-mix(in srgb, var(--bs-success) 8%, transparent);
+    border-radius: var(--bs-border-radius);
+}
+
+//  phones: number, who and status on the first line; costume and Edit under them
+@media (max-width: 575.98px) {
+    .roster-row__main {
+        grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+        row-gap: 0.25rem;
+    }
+
+    .roster-row__number {
+        grid-row: 1;
+    }
+
+    .roster-row__who {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .roster-row__status {
+        grid-column: 3;
+        grid-row: 1;
+    }
+
+    .roster-row__costume {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    .roster-row__edit {
+        grid-column: 3;
+        grid-row: 2;
+    }
+
+    .roster-row__editor {
+        padding-left: 0;
+    }
+
+    .roster-row__editor-actions {
+        > .d-flex {
+            align-items: stretch !important;
+            flex-direction: column;
+        }
+
+        .form-select {
+            width: 100% !important;
+        }
+    }
+}
+
+.shift-signup {
+    padding: 0.75rem 0;
+    scroll-margin-top: 5rem;
+}
+
+.shift-signup__start {
+    align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
-    justify-content: flex-end;
+    gap: 0.75rem 1rem;
+}
+
+.shift-signup__confirm {
+    align-items: center;
+    display: flex;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+}
+
+.shift-links {
+    padding-top: 0.5rem;
+}
+
+.shift-links__row {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.5rem;
+}
+
+.friend-signup-step:empty {
+    display: none;
 }
 
 .shift-signup-primary,
@@ -374,7 +505,8 @@ input.searching {
     justify-content: flex-end;
 }
 
-//  the Sign Up form (costume, plans, Sign Up) and, once signed up, "Your sign-up" in its place
+//  the Sign Up form's choices (costume, plans) and Confirm, once Sign up is pressed (and the
+//  sign-up tour's example box, pages/events/inc/signup-tour.blade.php)
 .shift-signup-primary--form,
 .my-shift-signup {
     background: color-mix(in srgb, var(--bs-success) 7%, var(--bs-card-bg));
@@ -417,34 +549,6 @@ input.searching {
 //  phones: toasts sit along the bottom, so lift them over the "Your sign-up" bar
 body:has(.my-signup-bar) .toast-container.bottom-0 {
     margin-bottom: calc(3rem + env(safe-area-inset-bottom));
-}
-
-//  phones: "Your sign-up"'s dropdowns and buttons fill the panel, like the Sign Up form's
-@media (max-width: 575.98px) {
-    .my-shift-signup__actions {
-        > .d-flex {
-            align-items: stretch !important;
-            flex-direction: column;
-        }
-
-        .form-select,
-        .btn,
-        .input-group {
-            width: 100% !important;
-        }
-
-        .input-group > .btn {
-            flex: 1 1 0;
-        }
-    }
-}
-
-//  the viewer's own roster row, which they change on "Your sign-up" instead
-.roster-row--mine {
-    background: color-mix(in srgb, var(--bs-primary) 6%, transparent);
-    border-radius: var(--bs-border-radius);
-    padding-bottom: 0.25rem;
-    padding-top: 0.25rem;
 }
 
 #mission-roster {

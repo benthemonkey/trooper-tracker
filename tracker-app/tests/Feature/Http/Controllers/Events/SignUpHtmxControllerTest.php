@@ -356,7 +356,7 @@ class SignUpHtmxControllerTest extends TestCase
         $response->assertOk();
         $response->assertSee('id="my-signup-summary"', false);
         $response->assertSee('hx-swap-oob="true"', false);
-        $response->assertSee('id="my-shift-signup-'.$event_shift->id.'"', false);
+        $response->assertSee('roster-row--mine', false);
         $response->assertSee('Cancel my sign-up');
         $response->assertDontSee('<option value="cancelled"', false);
     }
