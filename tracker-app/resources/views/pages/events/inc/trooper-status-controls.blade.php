@@ -22,7 +22,7 @@
                 && $event_trooper->canUpdateStatus($viewer)
                 && count($plan_options) > 1;
         @endphp
-        <div class="d-flex flex-wrap gap-3 align-items-center justify-content-md-end">
+        <div class="d-flex flex-wrap gap-3 align-items-baseline justify-content-md-end">
             @if($can_change_plans)
                 <x-input-select :property="'status'"
                                 :options="$plan_options"
