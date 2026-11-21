@@ -9,6 +9,7 @@ return [
     '** risk of cancellation **' => '** risk of cancellation **',
     '+ :count more shift|+ :count more shifts' => '+ :count more shift|+ :count more shifts',
     '-- Donations --' => '-- Donations --',
+    '-- No backup costume --' => '-- No backup costume --',
     '-- None --' => '-- None --',
     '-- Requested Characters --' => '-- Requested Characters --',
     '-- Select Backup Costume (optional) --' => '-- Select Backup Costume (optional) --',

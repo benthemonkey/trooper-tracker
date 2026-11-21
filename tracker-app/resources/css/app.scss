@@ -494,6 +494,18 @@ input.searching {
     gap: 0.75rem 1rem;
 }
 
+//  the backup costume: a link beside Going/Tentative until they want one, then the picker
+.shift-signup__backup {
+    align-items: center;
+    display: flex;
+    flex: 1 1 12rem;
+
+    .form-select {
+        max-width: none;
+        width: 100%;
+    }
+}
+
 .shift-signup__confirm {
     align-items: center;
     display: flex;

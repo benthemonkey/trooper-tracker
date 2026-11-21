@@ -36,13 +36,13 @@
             'hx-target'    => '#shift-container-' . $event_shift->id,
             'hx-swap'      => 'outerHTML',
             'hx-trigger'   => 'click',
-            'hx-include'   => "#org-picker-{$event_shift->id}, #station-picker-{$event_shift->id}, #costume-picker-{$event_shift->id}, #status-picker-{$event_shift->id}",
+            'hx-include'   => "#org-picker-{$event_shift->id}, #station-picker-{$event_shift->id}, #costume-picker-{$event_shift->id}, #status-picker-{$event_shift->id}, #backup-picker-{$event_shift->id}",
             'hx-indicator' => "#transmission-bar-shift-{$event_shift->id}, closest .btn",
         ];
     @endphp
     <div class="shift-signup"
          id="shift-signup-{{ $event_shift->id }}"
-         x-data="{ open: false, costume: @js(!$event->requiresCostume() ? 'none' : ($signup_costume_default !== null ? (string) $signup_costume_default : '')) }">
+         x-data="{ open: false, backup: false, costume: @js(!$event->requiresCostume() ? 'none' : ($signup_costume_default !== null ? (string) $signup_costume_default : '')) }">
         <div class="shift-signup__start"
              x-show="!open">
             @if($has_choices)
@@ -121,6 +121,29 @@
                             <option value="{{ $status_value }}">{{ $status_label }}</option>
                         @endforeach
                     </select>
+                @endif
+                @if($event->requiresCostume() && count($signup_costume_options) > 0)
+                    {{-- optional: a link until they want one, then the picker --}}
+                    <div class="shift-signup__backup">
+                        <button type="button"
+                                class="btn btn-link btn-sm p-0"
+                                x-show="!backup"
+                                x-on:click="backup = true; $nextTick(() => $refs.backup.focus())">
+                            {{ __('events.Add a backup costume') }}
+                        </button>
+                        <select id="backup-picker-{{ $event_shift->id }}"
+                                name="backup_costume_id"
+                                class="form-select form-select-sm"
+                                aria-label="{{ __('events.Backup costume (optional)') }}"
+                                x-ref="backup"
+                                x-show="backup"
+                                x-cloak>
+                            <option value="">{{ __('events.-- No backup costume --') }}</option>
+                            @foreach($signup_costume_options as $costume_id => $costume_name)
+                                <option value="{{ $costume_id }}">{{ $costume_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 @endif
                 <div class="shift-signup__confirm">
                     <button class="btn btn-sm btn-success htmx-disable"
