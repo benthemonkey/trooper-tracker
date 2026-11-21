@@ -13,15 +13,12 @@
     $opens_itself = $can_edit && $event_trooper->status === \App\Enums\EventTrooperStatus::PENDING
         && ($is_my_row || $event_trooper->added_by_trooper_id === $viewer->id);
 @endphp
-<div class="roster-row trooper-status-{{ $event_trooper->status->value }} {{ $is_my_row ? 'roster-row--mine' : '' }} {{ $can_edit ? 'roster-row--editable' : '' }}"
+<div class="roster-row trooper-status-{{ $event_trooper->status->value }} {{ $is_my_row ? 'roster-row--mine' : '' }}"
      id="roster-row-{{ $event_trooper->id }}"
      @if($can_edit)
          x-data="Events.rosterRow({{ $event_trooper->id }}, @js($opens_itself))"
-         x-bind:class="{ 'roster-row--open': editing }"
      @endif>
-    {{-- the whole row opens the drawer; the name link and any buttons keep doing their own thing --}}
-    <div class="roster-row__main"
-         @if($can_edit) x-on:click="toggleFrom($event)" @endif>
+    <div class="roster-row__main">
         <span class="roster-row__number text-muted">{{ $roster_number ?? '' }}</span>
         <div class="roster-row__who">
             <a href="{{ route('service-records.trooper', ['trooper' => $event_trooper->trooper->id]) }}">
@@ -49,17 +46,13 @@
         <div class="roster-row__edit">
             @if($can_edit)
                 <button type="button"
-                        class="btn btn-link btn-sm p-0 roster-row__toggle"
+                        class="btn btn-link btn-sm p-0"
                         aria-controls="roster-row-editor-{{ $event_trooper->id }}"
                         x-bind:aria-expanded="editing"
                         x-on:click="editing = !editing">
-                    {{-- both words in one spot, the other one hidden, so the column keeps its width --}}
-                    <span class="roster-row__toggle-labels">
-                        <span x-bind:class="{ 'invisible': editing }">{{ __('events.Edit') }}</span>
-                        <span class="invisible"
-                              x-bind:class="{ 'invisible': !editing }">{{ __('events.Done') }}</span>
-                    </span>
-                    <i class="fa-solid fa-chevron-down roster-row__chevron" aria-hidden="true"></i>
+                    <span x-show="!editing">{{ __('events.Edit') }}</span>
+                    <span x-show="editing"
+                          x-cloak>{{ __('events.Done') }}</span>
                 </button>
             @endif
         </div>
@@ -69,10 +62,8 @@
              id by copying the old one's attributes over and back, which wipes Alpine's display:none --}}
         <div class="roster-row__editor"
              x-show="editing"
-             x-collapse
              @unless($opens_itself) x-cloak @endunless>
-            <div class="roster-row__drawer"
-                 id="roster-row-editor-{{ $event_trooper->id }}">
+            <div id="roster-row-editor-{{ $event_trooper->id }}">
             <div class="row g-3">
                 <div class="col-12 col-md-7">
                     @if($event_trooper->canUpdateCostume($viewer))
