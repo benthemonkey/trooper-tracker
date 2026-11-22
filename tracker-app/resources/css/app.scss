@@ -638,15 +638,40 @@ html body .btn.btn-secondary-action {
     }
 }
 
-//  toasts (ToastMessages.svelte) float over the page: Bootstrap's see-through toast background let
-//  the text underneath show through the alert
-.toast {
-    --bs-toast-bg: var(--bs-body-bg);
-}
-
 //  phones: toasts sit along the bottom, so lift them over the "Your sign-up" bar
 body:has(.my-signup-bar) .toast-container.bottom-0 {
     margin-bottom: calc(3rem + env(safe-area-inset-bottom));
+}
+
+//  "You're bringing", under "Your sign-up": the friends and guests they added, then the Add buttons
+.my-shift-bringing {
+    border-top: 1px solid color-mix(in srgb, var(--bs-success) 30%, var(--bs-border-color));
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+}
+
+//  on its own (they aren't on the shift) with nobody added yet: just the Add buttons
+.my-shift-bringing--loose {
+    border-top: 0;
+    flex-basis: 100%;
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.my-shift-bringing__person {
+    margin-bottom: 0.75rem;
+
+    + .my-shift-bringing__person {
+        border-top: 1px dashed var(--bs-border-color);
+        padding-top: 0.75rem;
+    }
+}
+
+.my-shift-bringing__add {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
 }
 
 #mission-roster {
@@ -741,35 +766,10 @@ body:has(.my-signup-bar) .toast-container.bottom-0 {
     height: 4rem;
 }
 
-//  "You're bringing", under "Your sign-up": the friends and guests they added, then the Add buttons
-.my-shift-bringing {
-    border-top: 1px solid color-mix(in srgb, var(--bs-success) 30%, var(--bs-border-color));
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
-}
-
-//  on its own (they aren't on the shift) with nobody added yet: just the Add buttons
-.my-shift-bringing--loose {
-    border-top: 0;
-    flex-basis: 100%;
-    margin-top: 0;
-    padding-top: 0;
-}
-
-.my-shift-bringing__person {
-    margin-bottom: 0.75rem;
-
-    + .my-shift-bringing__person {
-        border-top: 1px dashed var(--bs-border-color);
-        padding-top: 0.75rem;
-    }
-}
-
-.my-shift-bringing__add {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    justify-content: flex-end;
+//  toasts (ToastMessages.svelte) float over the page: Bootstrap's see-through toast background let
+//  the text underneath show through the alert
+.toast {
+    --bs-toast-bg: var(--bs-body-bg);
 }
 
 .shift-signup-primary--station {

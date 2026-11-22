@@ -258,7 +258,7 @@ Visitors can only be members of primary clubs. The check applies only to `is_mem
 | Deny join request | `app/Messages/Troopers/Commands/Membership/DenyTrooperRequest.php` |
 | Remove membership | `app/Messages/Troopers/Commands/RemoveTrooperMembership.php` |
 | Update assignment picker | `app/Messages/Troopers/Commands/UpdateTrooperMemberships.php` |
-| Direct admin add | `app/Messages/Troopers/Commands/DirectAddTrooper.php` |
+| Direct admin add | `app/Messages/Troopers/Commands/AddTrooperDirectly.php` |
 | Membership page query | `app/Messages/Troopers/Queries/Membership/GetTrooperOrganizationMemberships.php` |
 | Assignment observer | `app/Models/Observers/TrooperAssignmentObserver.php` |
 | Membership page view | `resources/views/pages/admin/troopers/membership.blade.php` |
