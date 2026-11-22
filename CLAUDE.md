@@ -213,7 +213,7 @@ tracker-app/
 
 | Element | Convention | Example |
 |---------|-----------|---------|
-| Classes | PascalCase | `GetTroopersByRole`, `LoginSubmitController` |
+| Classes | PascalCase | `GetTroopersByRole`, `LoginTrooperController` |
 | Methods / Functions | camelCase | `handleRequest()`, `findUserById()` |
 | Parameters & local variables | snake_case | `$user_name`, `$local_variable` |
 | Class properties | snake_case | `private string $class_property` |
@@ -231,8 +231,36 @@ tracker-app/
 
 Always invokable (single-action). One controller = one action.
 
+Each feature folder splits its controllers in two:
+
+- `Commands/`: the request changes something: the database, or who is logged in. This goes by
+  what the controller does, not the HTTP verb: logout, email verification and the OAuth callback
+  are GETs that live in `Commands/`.
+- `Pages/`: the request changes nothing. Pages, plus downloads (ICS, CSV), JSON lookups (pickers,
+  search) and HTMX fragments.
+
+Controller names follow the same `[Verb][Object][Optional Detail]` rule as Command messages, and
+share the message's name where there is one (`LoginTrooperController` → `LoginTrooper`). Pages
+start with `Show` (one page or thing), `List` (a list), `Download`, or `Search`; a page that is
+the form for a command is `Show[Thing]FormController` (`ShowLoginFormController`,
+`ShowSetupFormController`). Drop `Submit`: the form's POST is named after what it does.
+
+```
+app/Http/Controllers/Events/
+├── Commands/SignUpTrooperController.php      # POST: signs a trooper up for a shift
+├── Commands/CompleteShiftController.php      # GET from an email link: records attendance
+├── Pages/ListEventsController.php
+├── Pages/ShowEventController.php
+└── Pages/DownloadEventIcsController.php
+```
+
+Admin controllers have not moved to `Commands/`/`Pages/` yet (except `Admin/Troopers` and
+`Admin/EventTypes`); they will follow Laravel's resource verbs (`Index`, `Show`, `Create`,
+`Store`, `Edit`, `Update`, `Destroy`). Front-end URLs and route names stay as they are, because
+people bookmark them; admin routes may change.
+
 ```php
-// app/Http/Controllers/Events/CreateEventController.php
+// app/Http/Controllers/Events/Commands/CreateEventController.php
 class CreateEventController extends Controller
 {
     public function __invoke(CreateEventRequest $request): RedirectResponse { ... }
@@ -363,12 +391,29 @@ npm run build    # Production build
 
 ## Commit Messages
 
-Format: `<type>: <short all lower case message>`, where type is `fix`, `feature`, `chore`,
-`style`, etc.
+Format: `<type>: <short all lower case message>`. PRs are squash-merged, so the PR title becomes
+the commit on `main`: give PR titles the same format.
+
+| Type | When |
+|------|------|
+| `feature` | Something new people can do or see |
+| `fix` | Something that behaved wrongly now behaves correctly |
+| `style` | UI layout or look only, with no logic changed: CSS, or classes and markup in a view or Svelte component |
+| `refactor` | Restructuring or renaming with no change in behaviour |
+| `perf` | Faster or lighter, same behaviour |
+| `test` | Tests only (PHPUnit, Vitest, Playwright) |
+| `docs` | Documentation only (`docs/`, CLAUDE.md, READMEs) |
+| `chore` | Everything else: dependencies, CI, build and tooling config, cleanup |
+
+- One spelling per type: `feature`, not `feat`; `fix`, not `bug`; `docs`, not `doc`.
+- A change that fits more than one type takes the one that matters most to users:
+  `feature` > `fix` > `perf` > `style` > `refactor` > `test` / `docs` > `chore`. A layout change
+  that also changes a condition, prop, PHP or TypeScript is a `fix` or `feature`, not `style`.
 
 ```
 fix: station capacity is a number input
 feature: create event in the events menu for everyone who can create events
+style: support the garrison button is full width on phones
 ```
 
 ---
