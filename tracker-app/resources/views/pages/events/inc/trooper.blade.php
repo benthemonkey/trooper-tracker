@@ -79,7 +79,6 @@
                     @include('pages.events.inc.trooper-status-controls', ['event_trooper' => $event_trooper, 'part' => 'edit'])
                 </div>
             </div>
-            <div class="small text-muted mt-2">{{ __('events.Changes save as you pick them.') }}</div>
             </div>
         </div>
     @endif

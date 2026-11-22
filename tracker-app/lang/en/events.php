@@ -85,7 +85,6 @@ return [
     'Cancelled' => 'Cancelled',
     'Change' => 'Change',
     'Change your plans here' => 'Change your plans here',
-    'Changes save as you pick them.' => 'Changes save as you pick them.',
     'Character Types:' => 'Character Types:',
     'Charity' => 'Charity',
     'Choose your station' => 'Choose your station',
