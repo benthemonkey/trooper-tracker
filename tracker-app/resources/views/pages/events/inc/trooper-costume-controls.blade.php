@@ -81,7 +81,7 @@
                     class="form-select-sm mt-2 mt-md-0" />
     <div x-data="{ backup: @js($event_trooper->backup_costume_id !== null) }">
         <button type="button"
-                class="btn btn-link btn-sm p-0 mt-2"
+                class="btn btn-sm btn-outline-secondary btn-secondary-action mt-2"
                 x-show="!backup"
                 @if($event_trooper->backup_costume_id !== null) x-cloak @endif
                 x-on:click="backup = true">

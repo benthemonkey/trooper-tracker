@@ -46,7 +46,7 @@
         <div class="roster-row__edit">
             @if($can_edit)
                 <button type="button"
-                        class="btn btn-link btn-sm p-0"
+                        class="btn btn-sm btn-outline-secondary btn-secondary-action"
                         aria-controls="roster-row-editor-{{ $event_trooper->id }}"
                         x-bind:aria-expanded="editing"
                         x-on:click="editing = !editing">

@@ -62,7 +62,7 @@
                     @csrf
                     <input type="hidden" name="status" value="{{ $again_status->value }}" />
                     <x-sign-up-status :status="$event_guest->status" :block="true" />
-                    <button type="submit" class="btn btn-link btn-sm p-0">{{ __('events.Sign up again') }}</button>
+                    <button type="submit" class="btn btn-sm btn-outline-secondary btn-secondary-action">{{ __('events.Sign up again') }}</button>
                 </form>
             @else
                 <x-sign-up-status :status="$event_guest->status" />
@@ -85,7 +85,7 @@
         <div class="roster-row__edit">
             @if($can_edit && !$is_cancelled)
                 <button type="button"
-                        class="btn btn-link btn-sm p-0"
+                        class="btn btn-sm btn-outline-secondary btn-secondary-action"
                         aria-controls="roster-guest-editor-{{ $event_guest->id }}"
                         x-bind:aria-expanded="editing"
                         x-on:click="editing = !editing">

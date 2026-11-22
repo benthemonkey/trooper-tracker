@@ -116,7 +116,7 @@
             @else
                 <input type="hidden" name="status" value="{{ \App\Enums\EventTrooperStatus::GOING->value }}" />
             @endif
-            <button type="submit" class="btn btn-link btn-sm p-0">
+            <button type="submit" class="btn btn-sm btn-outline-secondary btn-secondary-action">
                 {{ __('events.Sign up again') }}
             </button>
         </form>

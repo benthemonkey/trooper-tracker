@@ -31,7 +31,7 @@
                 <div id="friend-signup-action-{{ $shift_id }}">
                     <div class="shift-links__friend">
                         <button type="button"
-                                class="btn btn-link p-0"
+                                class="btn btn-sm btn-outline-secondary btn-secondary-action"
                                 hx-get="{{ route('pickers.trooper', ['property' => 'add-shift-friend-' . $shift_id, 'event' => 'trooper:selected', 'picker_mode' => App\Enums\TrooperSearchMode::FRIENDS->value]) }}"
                                 hx-target="#modal-trooper .modal-body"
                                 hx-trigger="click"
@@ -44,7 +44,7 @@
             @endif
             @if($can_add_guest)
                 <button type="button"
-                        class="btn btn-link p-0"
+                        class="btn btn-sm btn-outline-secondary btn-secondary-action"
                         x-on:click="addingGuest = !addingGuest; $nextTick(() => addingGuest && $refs.guestName.focus())">
                     {{ __('events.Add a guest') }}
                 </button>
@@ -53,7 +53,7 @@
                 @php($link = $event_shift->createCalendarLink())
                 <div class="dropdown">
                     <button type="button"
-                            class="btn btn-link p-0 dropdown-toggle"
+                            class="btn btn-sm btn-outline-secondary btn-secondary-action dropdown-toggle"
                             data-bs-toggle="dropdown"
                             aria-expanded="false">
                         {{ __('events.Add to calendar') }}

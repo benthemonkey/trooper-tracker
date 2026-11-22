@@ -5,7 +5,7 @@
         @auth
             {{-- replays the sign-up tour (pages/events/inc/signup-tour.blade.php) --}}
             <button type="button"
-                    class="btn btn-link btn-sm p-0 text-muted"
+                    class="btn btn-sm btn-outline-secondary btn-secondary-action"
                     data-tour-replay
                     x-data
                     x-on:click="$dispatch('signup-tour:start')">
@@ -19,7 +19,7 @@
             </a>
             @if($event->is_active)
                 <button type="button"
-                        class="btn btn-sm btn-outline-secondary"
+                        class="btn btn-sm btn-outline-secondary btn-secondary-action"
                         data-bs-toggle="modal"
                         data-bs-target="#share-roster-modal">
                     <i class="fa fa-fw fa-share-nodes me-1"></i>

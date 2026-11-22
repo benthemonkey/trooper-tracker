@@ -126,7 +126,7 @@
                     {{-- optional: a link until they want one, then the picker --}}
                     <div class="shift-signup__backup">
                         <button type="button"
-                                class="btn btn-link btn-sm p-0"
+                                class="btn btn-sm btn-outline-secondary btn-secondary-action"
                                 x-show="!backup"
                                 x-on:click="backup = true; $nextTick(() => $refs.backup.focus())">
                             {{ __('events.Add a backup costume') }}
