@@ -321,7 +321,7 @@ Every page has four page slots, with no core edit needed:
 | Page slot | Where |
 |-----------|-------|
 | `page.head` | Inside `<head>`, after the stylesheets. On Svelte pages, only on the first full page load. |
-| `page.top` | Above the page content, below flash messages. |
+| `page.top` | At the top of the page content (flash messages show as toasts over the page). |
 | `page.bottom` | Below the page content. |
 | `page.scripts` | End of `<body>`. On Svelte pages, only on the first full page load. |
 
@@ -449,6 +449,20 @@ Override `pluginEnabled()` in the provider to run something each time the plugin
 Plugin code that only adds to a page or reacts to something is isolated: a failure is logged and reported, and the rest of the request carries on. That covers loading and booting the plugin, slots, app event listeners, web middleware, System Check rows, `pluginEnabled()`, donation sources on the service record and support pages, and permission request sections and summaries. Scheduled tasks are isolated by the scheduler.
 
 Plugin code that is part of a change still stops the change when it fails, so nothing is half saved: `extendForm()` save callbacks, `beforeMessage()` / `afterMessage()`, permission request validation, storing and approval, donation sources while a trooper's rank is recalculated, and club synchronizers (each club's sync fails on its own).
+
+---
+
+## Bundled plugins
+
+These plugins ship in `tracker-app/plugins`. Each has a README covering what it does, how to configure it, what it adds and how to run its tests. The sections below add how each one moved out of core.
+
+| Plugin | Purpose | README |
+|--------|---------|--------|
+| Discord (`discord`) | Announces newly posted events in a Discord channel, mentioning the hosting organization's role | [README](../tracker-app/plugins/discord/README.md) |
+| Google Sheets (`google-sheets`) | Lets the club synchronizers and member lookups read a club's roster from a Google Sheet | [README](../tracker-app/plugins/google-sheets/README.md) |
+| HoloNet (`holonet`) | Links garrison trackers, so a trooper's service record shows troops done on other trackers | [README](../tracker-app/plugins/holonet/README.md) |
+| Sentry (`sentry`) | Sends server and browser errors to Sentry | [README](../tracker-app/plugins/sentry/README.md) |
+| XenForo (`xenforo`) | Forum login, user sync, event threads and replies, forum notifications and forum donations | [README](../tracker-app/plugins/xenforo/README.md) |
 
 ---
 

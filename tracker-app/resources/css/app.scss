@@ -291,15 +291,6 @@ input.searching {
     padding-bottom: 1px;
 }
 
-.station-remove {
-    align-items: center;
-    display: inline-flex;
-    height: 2rem;
-    justify-content: center;
-    padding: 0;
-    width: 2rem;
-}
-
 // Attendee-facing station summary (event page)
 .station-summary {
     display: flex;
@@ -373,8 +364,9 @@ input.searching {
     margin-bottom: 0.5rem;
 }
 
-//  the Sign up area sits inside the roster grid, across it
-.roster > .shift-signup-actions {
+//  the Sign up area, and Sign Up above a long roster, sit inside the roster grid, across it
+.roster > .shift-signup-actions,
+.roster > .shift-signup-jump {
     grid-column: 1 / -1;
 }
 
@@ -488,9 +480,10 @@ input.searching {
     }
 }
 
-//  a secondary action: a small outline button in normal case. Quieter than the filled main action
-//  (Sign Up, Confirm) but plainly a button, since it does something rather than go somewhere. Meant
-//  for use site-wide; matches the theme's `body.theme-* .btn` weight and comes after it.
+//  a secondary action: an outline button, quieter than the filled main action (Sign Up, Confirm) by
+//  its colours only, but plainly a button, since it does something rather than go somewhere. Font,
+//  case and size are every button's (the theme's `body.theme-* .btn`, and Bootstrap's btn-sm /
+//  btn-lg). Meant for use site-wide; comes after the theme to win.
 html body .btn.btn-secondary-action {
     //  the theme's outline-secondary is dark grey on dark, which reads as disabled; these come from
     //  the theme's own text colours, so they hold in every theme
@@ -502,10 +495,6 @@ html body .btn.btn-secondary-action {
     --bs-btn-active-color: var(--bs-body-color);
     --bs-btn-active-bg: color-mix(in srgb, var(--bs-body-color) 16%, transparent);
     --bs-btn-active-border-color: var(--bs-body-color);
-    font-family: inherit;
-    font-weight: 500;
-    letter-spacing: normal;
-    text-transform: none;
     white-space: nowrap;
 }
 
@@ -662,8 +651,10 @@ html body .btn.btn-secondary-action {
 }
 
 //  phones: toasts sit along the bottom, so lift them over the "Your sign-up" bar
-body:has(.my-signup-bar) .toast-container.bottom-0 {
-    margin-bottom: calc(3rem + env(safe-area-inset-bottom));
+@media (max-width: 575.98px) {
+    body:has(.my-signup-bar) .tt-toasts {
+        margin-bottom: calc(3rem + env(safe-area-inset-bottom));
+    }
 }
 
 //  "You're bringing", under "Your sign-up": the friends and guests they added, then the Add buttons
@@ -793,6 +784,21 @@ body:has(.my-signup-bar) .toast-container.bottom-0 {
 //  the text underneath show through the alert
 .toast {
     --bs-toast-bg: var(--bs-body-bg);
+}
+
+//  ToastMessages.svelte: along the bottom on phones, top right from sm up
+.tt-toasts {
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+
+    @media (min-width: 576px) {
+        top: 0;
+        right: 0;
+        bottom: auto;
+        left: auto;
+        transform: none;
+    }
 }
 
 .shift-signup-primary--station {
