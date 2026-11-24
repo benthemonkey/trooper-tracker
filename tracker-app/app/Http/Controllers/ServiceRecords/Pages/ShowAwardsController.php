@@ -5,29 +5,20 @@ declare(strict_types=1);
 namespace App\Http\Controllers\ServiceRecords\Pages;
 
 use App\Http\Controllers\PageController;
-use App\Messages\Troopers\Queries\GetTrooperAwards;
-use Illuminate\Contracts\View\View;
+use App\Messages\ServiceRecords\PageData\AwardsPageData;
 use Illuminate\Http\Request;
-use RuntimeException;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 /**
  * Displays awarded trooper activity.
  */
 class ShowAwardsController extends PageController
 {
-    /**
-     * Retrieves award recipients for a lookback window and renders the awards view.
-     *
-     * @throws RuntimeException
-     */
-    public function __invoke(Request $request): View
+    public function __invoke(Request $request): InertiaResponse
     {
-        $days = (int) $request->query('days', '30');
+        $data = AwardsPageData::call($request);
 
-        $award_troopers = GetTrooperAwards::call(lookback: $days);
-
-        $data = compact('award_troopers', 'days');
-
-        return view('pages.service-records.awards', $data);
+        return Inertia::render('service-records/Awards', $data);
     }
 }

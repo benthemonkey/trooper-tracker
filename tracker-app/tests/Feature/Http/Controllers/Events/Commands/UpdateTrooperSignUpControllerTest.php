@@ -508,7 +508,7 @@ class UpdateTrooperSignUpControllerTest extends TestCase
         ]);
     }
 
-    public function test_invoke_resign_up_without_costume_becomes_pending(): void
+    public function test_invoke_reinstate_without_costume_becomes_pending(): void
     {
         $trooper = Trooper::factory()->asActive()->withVerifiedEmail()->create();
         $organization = Organization::factory()->create();
@@ -531,7 +531,7 @@ class UpdateTrooperSignUpControllerTest extends TestCase
 
         $response = $this->actingAs($trooper)->post(
             route('events.signup-update', ['event_trooper' => $event_trooper->id]),
-            ['resign_up' => 1]
+            ['reinstate' => 1]
         );
 
         $response->assertRedirect();
@@ -779,7 +779,7 @@ class UpdateTrooperSignUpControllerTest extends TestCase
     public function test_invoke_costume_decision_on_manual_selection_event_returns_to_standby_not_going(): void
     {
         // Only a moderator can act on a manual-selection event trooper (per
-        // SignUpUpdateRequest::authorize()), and the costume_id branch also
+        // UpdateTrooperSignUpRequest::authorize()), and the costume_id branch also
         // requires ownership — so this is a moderator signed up for their own spot.
         $admin = Trooper::factory()->asSystemOwner()->withVerifiedEmail()->create();
         $organization = Organization::factory()->create();

@@ -6,14 +6,14 @@ namespace App\Http\Controllers\Events\Commands;
 
 use App\Enums\FlashType;
 use App\Enums\ShiftAttendanceOutcome;
-use App\Http\Requests\Events\ConfirmShiftAttendanceRequest;
+use App\Http\Requests\Events\Commands\ConfirmShiftAttendanceRequest;
 use App\Messages\Events\Commands\ConfirmShiftAttendance;
 use App\Models\EventTrooper;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 /**
- * Records "Made It" or "Missed It" from the bell or the notifications page,
+ * Records "Made It" or "Missed It" from the bell, the notifications page or the event page,
  * then goes back to the page it came from. A costume that can credit more than one club goes
  * to the club choice page first, the same page the email link opens.
  */

@@ -2,13 +2,13 @@ import type { Trooper } from "$lib/components/models/TrooperPickerViewModel.svel
 import { SubmitableViewModel, type ISubmitableViewModel } from "$lib/domains/types.svelte";
 import { getRoute } from "$lib/utils";
 import { useForm } from "@inertiajs/svelte";
-import type { AssignTrooperPageData, Award, IAssignTrooperForm } from "../types";
+import type { AssignTrooperPageData, AwardSummary, IAssignTrooperForm } from "../types";
 
 export class AssignTrooperViewModel
     extends SubmitableViewModel<AssignTrooperViewModel, IAssignTrooperForm>
     implements ISubmitableViewModel<IAssignTrooperForm> {
 
-    award: Award;
+    award: AwardSummary;
     trooper: Trooper | null = $state(null);
 
     constructor(pageData: AssignTrooperPageData) {
@@ -22,7 +22,7 @@ export class AssignTrooperViewModel
     }
 
     get cancel_url(): string {
-        return getRoute("admin.awards.list-troopers", { award: this.award.id! });
+        return getRoute("admin.awards.troopers.index", { award: this.award.id! });
     }
 
     pick = (trooper: Trooper | null) => {
@@ -34,6 +34,6 @@ export class AssignTrooperViewModel
         e.preventDefault();
 
         this.form.trooper_id = this.trooper?.id ?? null;
-        this.form.post(getRoute("admin.awards.assign-trooper", { award: this.award.id! }));
+        this.form.post(getRoute("admin.awards.troopers.store", { award: this.award.id! }));
     };
 }

@@ -7,7 +7,6 @@ export type FaqItem = {
     id: number;
     title: string;
     has_video: boolean;
-    sort_order: number;
     update_route?: string;
 };
 
@@ -15,7 +14,6 @@ export type FaqSection = {
     id: number;
     label: string;
     icon: string;
-    sort_order: number;
     faqs: FaqItem[];
     update_route?: string;
     create_item_route?: string;
@@ -48,13 +46,13 @@ export class IndexViewModel extends ViewModel {
 
     private buildSections() {
         this.sections.forEach((s) => {
-            s.update_route = getRoute("admin.faq.sections.update", { section: s.id });
+            s.update_route = getRoute("admin.faq.sections.edit", { section: s.id });
             s.create_item_route = getRoute("admin.faq.items.create", {
                 section_id: s.id,
             });
 
             s.faqs.forEach((f) => {
-                f.update_route = getRoute("admin.faq.items.update", { item: f.id });
+                f.update_route = getRoute("admin.faq.items.edit", { item: f.id });
             });
         });
     }
@@ -103,7 +101,7 @@ export class IndexViewModel extends ViewModel {
 
         const section_id = this.delete_section.id;
 
-        const url = getRoute("admin.faq.sections.delete", { section: this.delete_section.id });
+        const url = getRoute("admin.faq.sections.destroy", { section: this.delete_section.id });
 
         const data = {};
 
@@ -129,7 +127,7 @@ export class IndexViewModel extends ViewModel {
 
         const item_id = this.delete_item.id;
 
-        const url = getRoute("admin.faq.items.delete", { item: this.delete_item.id });
+        const url = getRoute("admin.faq.items.destroy", { item: this.delete_item.id });
 
         const data = {};
 

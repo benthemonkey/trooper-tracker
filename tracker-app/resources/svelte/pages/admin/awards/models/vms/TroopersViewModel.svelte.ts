@@ -1,10 +1,10 @@
 import { ViewModel } from "$lib/domains/types.svelte";
 import { getRoute } from "$lib/utils";
 import { router } from "@inertiajs/svelte";
-import type { Award, AwardedTrooper, TroopersPageData } from "../types";
+import type { AwardSummary, AwardedTrooper, TroopersPageData } from "../types";
 
 export class TroopersViewModel extends ViewModel {
-    award: Award;
+    award: AwardSummary;
     troopers: AwardedTrooper[] = $state([]);
     removing: AwardedTrooper | null = $state(null);
     submitting: boolean = $state(false);
@@ -17,7 +17,7 @@ export class TroopersViewModel extends ViewModel {
     }
 
     get assign_url(): string {
-        return getRoute("admin.awards.assign-trooper", { award: this.award.id! });
+        return getRoute("admin.awards.troopers.create", { award: this.award.id! });
     }
 
     confirmRemove = (trooper: AwardedTrooper) => {
@@ -36,7 +36,7 @@ export class TroopersViewModel extends ViewModel {
         this.submitting = true;
 
         router.post(
-            getRoute("admin.awards.remove-trooper", { award: this.award.id! }),
+            getRoute("admin.awards.troopers.destroy", { award: this.award.id! }),
             { remove_trooper_id: this.removing.award_trooper_id },
             {
                 preserveScroll: true,

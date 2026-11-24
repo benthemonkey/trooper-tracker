@@ -5,29 +5,20 @@ declare(strict_types=1);
 namespace App\Http\Controllers\ServiceRecords\Pages;
 
 use App\Http\Controllers\PageController;
-use App\Messages\Troopers\Queries\GetTrooperAchievements;
-use Illuminate\Contracts\View\View;
+use App\Messages\ServiceRecords\PageData\AchievementsPageData;
 use Illuminate\Http\Request;
-use RuntimeException;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 /**
  * Displays trooper achievement activity.
  */
 class ShowAchievementsController extends PageController
 {
-    /**
-     * Retrieves achievements for a lookback window and renders the achievements view.
-     *
-     * @throws RuntimeException
-     */
-    public function __invoke(Request $request): View
+    public function __invoke(Request $request): InertiaResponse
     {
-        $days = (int) $request->query('days', '30');
+        $data = AchievementsPageData::call($request);
 
-        $trooper_achievements = GetTrooperAchievements::call(lookback: $days);
-
-        $data = compact('days', 'trooper_achievements');
-
-        return view('pages.service-records.achievements', $data);
+        return Inertia::render('service-records/Achievements', $data);
     }
 }

@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Account\Pages;
 
 use App\Http\Controllers\PageController;
-use App\Messages\Notices\Queries\GetUnreadNotices;
-use Illuminate\Contracts\View\View;
+use App\Messages\Account\PageData\NoticesPageData;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 /**
  * Displays the notices/announcements page for the authenticated trooper.
@@ -21,16 +22,12 @@ class ListNoticesController extends PageController
      * Display the notices page for the authenticated trooper.
      *
      * @param  Request  $request  The incoming HTTP request
-     * @return View The rendered notices page
+     * @return InertiaResponse The rendered notices page
      */
-    public function __invoke(Request $request): View
+    public function __invoke(Request $request): InertiaResponse
     {
-        $trooper = $request->user();
+        $data = NoticesPageData::call($request);
 
-        $notices = GetUnreadNotices::call(trooper: $trooper);
-
-        $data = compact('notices');
-
-        return view('pages.account.notices', $data);
+        return Inertia::render('account/Notices', $data);
     }
 }

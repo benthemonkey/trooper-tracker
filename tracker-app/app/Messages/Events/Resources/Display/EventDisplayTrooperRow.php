@@ -41,7 +41,6 @@ class EventDisplayTrooperRow extends JsonResource
             'id' => $this->id,
             'number' => $this->roster_number,
             'trooper' => [
-                'id' => $this->trooper->id,
                 'name' => $this->trooper->display_name,
                 'legal_name' => $this->trooper->legal_name,
                 'url' => route('service-records.trooper', ['trooper' => $this->trooper->id]),
@@ -137,7 +136,7 @@ class EventDisplayTrooperRow extends JsonResource
     }
 
     /**
-     * 'resign_up' re-queues them by sign-up time on limited events; 'going' just sets them back.
+     * 'reinstate' re-queues them by sign-up time on limited events; 'going' just sets them back.
      */
     private function signUpAgain(): ?string
     {
@@ -150,39 +149,30 @@ class EventDisplayTrooperRow extends JsonResource
 
         if ($this->context->event->hasLimits())
         {
-            return $this->canReSignUp($viewer) ? 'resign_up' : null;
+            return $this->canReinstate($viewer) ? 'reinstate' : null;
         }
 
         return $this->canUpdateStatus($viewer) ? 'going' : null;
     }
 
     /**
-     * @return array{made_it_url: string|null, missed_it_url: string|null}|null
+     * Made It / Missed It: where the answer goes, and the answer already given (shown filled),
+     * which can still be changed during the grace period.
+     *
+     * @return array{url: string, answer: string|null}|null
      */
     private function attendance(): ?array
     {
-        $shift = $this->eventShift();
-        $viewer = $this->context->viewer;
-
-        $is_after = $shift->is_closed
-            && $shift->shift_ends_at->isPast()
-            && $this->isEligibleForAttendance()
-            && ($this->context->can_moderate || $this->canMarkAttendance($viewer));
-
-        if (!$is_after)
+        if (!$this->canMarkAttendance($this->context->viewer, $this->context->can_moderate))
         {
             return null;
         }
 
-        $answered = in_array($this->status, [
-            EventTrooperStatus::ATTENDED,
-            EventTrooperStatus::UNABLE_TO_ATTEND,
-            EventTrooperStatus::AWAITING_VERIFICATION,
-        ], true);
+        $answered = in_array($this->status, [EventTrooperStatus::ATTENDED, EventTrooperStatus::UNABLE_TO_ATTEND], true);
 
-        return $answered ? null : [
-            'made_it_url' => $this->getAttendanceUrl(EventTrooperStatus::ATTENDED),
-            'missed_it_url' => $this->getAttendanceUrl(EventTrooperStatus::UNABLE_TO_ATTEND),
+        return [
+            'url' => route('events.confirm-attendance', ['event_trooper' => $this->resource]),
+            'answer' => $answered ? $this->status->value : null,
         ];
     }
 
@@ -206,6 +196,8 @@ class EventDisplayTrooperRow extends JsonResource
             'stations' => $can_costume ? $this->stationPicker() : null,
             'organizations' => $can_costume ? $this->organizationPicker() : null,
             'costumes' => $can_costume ? $this->costumePicker() : null,
+            //  costumes is also null when the viewer may not change it; this says which
+            'requires_costume' => $this->context->event->requiresCostume(),
             'plans' => $this->plans(),
             'can_cancel' => $this->eventShift()->is_open && $can_cancel,
             'cancel_confirm' => $this->trooper_id === $viewer->id

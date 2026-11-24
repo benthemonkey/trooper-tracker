@@ -10,10 +10,11 @@ TroopTracker is a Laravel application for managing costuming club activities —
 |-------|-----------|
 | Backend | PHP 8.2+, Laravel |
 | Database | MySQL 8.0+ (SQLite in-memory for tests) |
-| Frontend | Blade templates, Alpine 3.x, HTMX 2.x, Bootstrap 5.2x |
+| Frontend | Inertia 2 + Svelte 5 + TypeScript (target); Blade, Alpine 3.x, HTMX 2.x (legacy); Bootstrap 5.2x |
 | Build | Vite, npm |
-| Testing | PHPUnit |
-| Code quality | Pint (formatting), PHPStan (static analysis) |
+| Testing | PHPUnit, Vitest, Playwright |
+| Code quality | Pint (formatting) |
+| Plugins | `tracker-app/plugins/<slug>` (see `docs/PLUGINS.md`) |
 
 The Laravel app root is `tracker-app/`. All commands below assume you're running from there.
 
@@ -76,7 +77,8 @@ final class GetTroopersByRole extends Message
 
 **Calling a message from a controller:**
 ```php
-class VoidSubmitController extends PageController
+// app/Http/Controllers/Admin/Troopers/Commands/VoidTrooperController.php
+class VoidTrooperController extends Controller
 {
     public function __invoke(Request $request, Trooper $trooper): RedirectResponse
     {
@@ -84,7 +86,7 @@ class VoidSubmitController extends PageController
 
         VoidTrooper::call(trooper: $trooper);
 
-        return redirect()->route('admin.troopers.profile', compact('trooper'));
+        return redirect()->route('admin.troopers.show', compact('trooper'));
     }
 }
 ```
@@ -144,12 +146,21 @@ Core principle: **decomposition into small, single units of work** — reduces c
 In addition to Commands and Queries (see Hyperdrive Messages above), page-facing endpoints get a **PageData** message:
 
 - **Commands & Queries** stay strictly separate — neither should be overloaded to also supply multi-query page view data.
-- **PageData**: aggregates multiple queries into a single response payload tailored to a specific page. Example: `GetAllOrganizationsQuery` returns full records/columns; `RegistrationPageData` pulls from that query and trims the payload to only the JSON fields the registration UI needs.
-- Location: `app/Messages/[Feature]/PageData/[Name]PageData.php` (see `app/Messages/Auth/PageData/LoginPageData.php` for reference).
+- **PageData**: aggregates multiple queries into a single response payload tailored to a specific page. Example: `GetOrganizationHierarchy` returns full records; `RegisterPageData` passes them through `RegisterOrganizationResource`, which sends only the fields the registration page reads.
+- Location: `app/Messages/[Feature]/PageData/[Name]PageData.php` (see `app/Messages/Awards/PageData/ListAwardsPageData.php` for reference).
+
+**What a PageData sends to Svelte (pages and the JSON lookups Svelte fetches):**
+- Only the fields the Svelte code reads: trace each prop through the page, its components and its VM. Unread fields don't go over the wire.
+- Every payload is shaped by a Resource (`JsonResource` in `app/Messages/[Feature]/Resources/`, like `AwardRowResource`: a `@mixin` docblock naming the page, model constants for keys). Hand-built arrays, even `['id' => …, 'name' => …]`, become Resources; plain scalars (a search term, a flag) may stay at the top level.
+- The page's TypeScript types (`pages/[feature]/models/types.ts`) list exactly what the Resource sends. When you add or drop a field, change both.
+- A Resource another page also uses isn't trimmed for one page: make a page-specific Resource instead.
+- An id-keyed map passed straight to Inertia as a Resource loses its keys (Laravel's resource wrapping renumbers integer keys). Pass `(new SomeResource(...))->resolve()` for those; lists and string-keyed objects are fine.
+- Blade views get PHP objects, not a serialized payload, so this applies to Svelte only.
 
 **Calling conventions:**
 - Page requests: `PageData::call($request)` — automatically hydrates constructor parameters from request inputs, query strings, route parameters, and route model bindings.
 - Everywhere else: explicit named arguments (e.g. `Query::call(organization_id: 123)`) to keep dependencies clear and refactoring safe.
+- Hyperdrive turns raw values into enums (and ids into bound models) for named arguments too, so pass `status: $request->validated('status')` rather than `EventTrooperStatus::from(...)`. Convert in the controller only when a bad value must give a specific response (a 404 for a tampered signed link).
 - Maintain PHPDoc annotations on static `::call()` methods to preserve constructor autocomplete/Intellisense.
 - For messages needing the authenticated user, inject `Actor $actor` in the constructor — this explicitly distinguishes the active session user from target user records fetched via lookup.
 
@@ -178,18 +189,23 @@ styled as a button (Login on the home page), and a quiet, low-stakes action may 
 
 ```
 resources/svelte/
-├── lib/domains/[feature]/
-│   └── vms/
-│       └── [PageViewModel].svelte.ts   # One file per VM; page logic, state, & types
+├── lib/                                # Shared across features
+│   ├── components/                     # Shared components (pickers), their VMs in components/models/
+│   └── domains/types.svelte.ts         # Shared types (Option, PaginatedResource, ...)
 └── pages/[feature]/
-    ├── components/                     # Single-responsibility, reusable UI components
+    ├── models/
+    │   ├── types.ts                    # The page's props: exactly what its PageData sends
+    │   └── vms/
+    │       └── [PageViewModel].svelte.ts   # One file per VM; page logic and state
+    ├── components/                     # Single-responsibility UI components
     │   └── ComponentName.svelte
     └── PageName.svelte
 ```
 
-- `lib/domains/[feature]/vms/`: each ViewModel handles a single unit of work supporting one specific page. Keep helper functions, types, and logic contained within its VM file.
+- `pages/[feature]/models/vms/`: each ViewModel handles a single unit of work supporting one specific page.
 - `pages/[feature]/`: pure presentation layer. Components and pages delegate business/state logic to their VM. Simple pages may not need a VM — use judgment.
-- Reference implementation: the auth/Login module (`resources/svelte/lib/domains/auth/vms/LoginViewModel.svelte.ts`).
+- Reference implementation: the auth/Login module (`resources/svelte/pages/auth/models/vms/LoginViewModel.svelte.ts`).
+- Vitest specs mirror the pages under `tests/js/svelte/[feature]/` and type their fixtures with the page's types, so a dropped field shows up there too.
 
 ---
 
@@ -260,11 +276,29 @@ Each feature folder splits its controllers in two:
 - `Pages/`: the request changes nothing. Pages, plus downloads (ICS, CSV), JSON lookups (pickers,
   search) and HTMX fragments.
 
+What a controller calls:
+
+- A `Pages/` controller calls exactly one PageData message, never a Query directly. A download's
+  PageData returns the filename and content; the controller only builds the response.
+- A `Commands/` controller calls a Command message that holds the business rules (eligibility,
+  capacity, what to write). The controller keeps only authorization, request validation, and
+  turning the result into flash text, a redirect or a response.
+- When the controller has to choose a response, the Command returns an outcome enum in
+  `app/Enums` (`ShiftAttendanceOutcome`, `SignUpOutcome`); the controller maps it to a toast or a
+  403. Don't put translated text in the Command.
+- A controller with no data and no rules (a static view, a redirect) needs no message, and one
+  whose work belongs in a queue only dispatches the Job.
+
 Controller names follow the same `[Verb][Object][Optional Detail]` rule as Command messages, and
 share the message's name where there is one (`LoginTrooperController` → `LoginTrooper`). Pages
 start with `Show` (one page or thing), `List` (a list), `Download`, or `Search`; a page that is
 the form for a command is `Show[Thing]FormController` (`ShowLoginFormController`,
 `ShowSetupFormController`). Drop `Submit`: the form's POST is named after what it does.
+
+A controller's form request mirrors its path and name: `Controllers/Events/Commands/UpdateTrooperSignUpController`
+uses `Requests/Events/Commands/UpdateTrooperSignUpRequest`, and its test is
+`tests/Feature/Http/Requests/Events/Commands/UpdateTrooperSignUpRequestTest`. Rules shared by
+several requests stay as a trait in the feature folder (`Requests/Admin/Events/CommonRules`).
 
 ```
 app/Http/Controllers/Events/
@@ -275,21 +309,47 @@ app/Http/Controllers/Events/
 └── Pages/DownloadEventIcsController.php
 ```
 
-Admin controllers have not moved to `Commands/`/`Pages/` yet (except `Admin/Troopers` and
-`Admin/EventTypes`); they will follow Laravel's resource verbs (`Index`, `Show`, `Create`,
-`Store`, `Edit`, `Update`, `Destroy`). Front-end URLs and route names stay as they are, because
-people bookmark them; admin routes may change.
+**Admin (Command Staff) is stricter: it follows Laravel's resource conventions.** For plain CRUD,
+the controller verb, route name and URL come from Laravel's resource actions. Every write is a
+POST (no PUT/PATCH/DELETE), so forms and Svelte send with `post`:
+
+| Action | Controller | Method + URL | Route name |
+|---|---|---|---|
+| index | `Pages/IndexAwardsController` | `GET /admin/awards` | `admin.awards.index` |
+| create | `Pages/CreateAwardController` | `GET /admin/awards/create` | `admin.awards.create` |
+| store | `Commands/StoreAwardController` | `POST /admin/awards` | `admin.awards.store` |
+| show | `Pages/ShowTrooperController` | `GET /admin/troopers/{trooper}` | `admin.troopers.show` |
+| edit | `Pages/EditAwardController` | `GET /admin/awards/{award}/edit` | `admin.awards.edit` |
+| update | `Commands/UpdateAwardController` | `POST /admin/awards/{award}` | `admin.awards.update` |
+| destroy | `Commands/DestroyCostumeController` | `POST /admin/costumes/{costume}/delete` | `admin.costumes.destroy` |
+
+- The controller name is the resource verb plus the object, even when the message says something
+  else (`UpdateAwardController` calls `RenameAward`).
+- A GET page and its POST never share a route name: the form page is `create`/`edit`, and the form
+  posts to `store`/`update`.
+- Nested resources nest the name: `admin.awards.troopers.create` / `.store` / `.destroy`
+  (`CreateAwardTrooperController`). So do parts of one resource that are saved on their own:
+  `admin.troopers.guardian.update`, `admin.events.shifts.edit` / `.update`.
+- Actions that aren't CRUD keep their own verb, named like the message: `VoidTrooperController`
+  (`admin.troopers.void`), `ApproveCostumeController`, `ReorderFaqItemsController`. If such an
+  action has a form page, the page is `Show[Thing]FormController` on `[action].create` and the
+  POST is `[action].store`, on the same URL (`/admin/troopers/merge`:
+  `ShowMergeTroopersFormController`, `MergeTroopersController`).
 
 ```php
-// app/Http/Controllers/Events/Commands/CreateEventController.php
-class CreateEventController extends Controller
-{
-    public function __invoke(CreateEventRequest $request): RedirectResponse { ... }
-}
-
-// routes/web.php
-Route::post('/events', CreateEventController::class);
+// routes/web/admin-awards.php
+Route::get('/', IndexAwardsController::class)->name('index');
+Route::get('/create', CreateAwardController::class)->name('create');
+Route::post('/', StoreAwardController::class)->name('store');
+Route::get('/{award}/edit', EditAwardController::class)->name('edit');
+Route::post('/{award}', UpdateAwardController::class)->name('update');
 ```
+
+Front-end URLs and route names stay as they are, because people bookmark them. Admin routes may
+change, but redirect any old URL that went out in an email or notification, with a dated comment
+saying when to remove it (see `routes/web/admin-troopers.php`).
+
+Tests mirror the controller: `tests/Feature/Http/Controllers/<same path>Test.php`.
 
 Controllers that render pages extend `PageController`, which provides the breadcrumb service
 (`$this->crumbs`) and an `initialized()` hook.
@@ -388,8 +448,8 @@ npm run test:e2e:parallel                 # Same, split over several app servers
 php artisan tracker:report-translations --strict  # Missing English lines / untranslated per language
 
 # Code quality
-./vendor/bin/pint                         # Format code
-./vendor/bin/phpstan                      # Static analysis
+composer pint:format                      # Format code (the folders CI checks; not tests/)
+composer pint:test                        # What CI runs: fails on unformatted code
 
 # Schema changes (after running migrations)
 php artisan code:models                   # Regenerate base models
@@ -442,10 +502,11 @@ style: support the garrison button is full width on phones
 ## Enums
 
 All enums are backed strings using `HasEnumHelpers`:
-- `AchievementType`, `AwardFrequency`, `EventStatus`, `EventTrooperStatus`, `EventType`
+- `AchievementType`, `AwardFrequency`, `EventStatus`, `EventTrooperStatus`, `EventGuestStatus`
 - `MembershipRole` (`member`, `handler`, `visitor`, `event_coordinator`, `moderator`, `staff_officer`, `system_owner`); `staff_officer` is like a System Owner without Plugins, System Check, or Merge (`is_administrator` vs `has_system_owner`)
-- `MembershipStatus` (`pending`, `active`, `retired`)
-- `NoticeType`, `NotificationFrequency`, `OrganizationType`, `TrooperTheme`
+- `MembershipStatus` (`none`, `pending`, `denied`, `active`, `inactive`, `invalid`, `reserve`, `retired`, `merged`, `departed`)
+- `NoticeType`, `NotificationFrequency`, `OrganizationType` (`organization`, `region`, `unit`), `TrooperTheme`
+- Event types are records (the `EventType` model, managed under Command Staff), not an enum
 
 ```php
 MembershipRole::toArray();     // ['member' => 'Member', ...]

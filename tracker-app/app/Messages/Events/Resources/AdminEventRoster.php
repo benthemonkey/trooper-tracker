@@ -79,12 +79,11 @@ class AdminEventRoster extends JsonResource
 
         return [
             'id' => $event_trooper->id,
-            'trooper_id' => $trooper->id,
             'display_name' => $trooper->display_name,
             'legal_name' => $trooper->legal_name,
             'profile_url' => $this->actor->is_event_coordinator
                 ? route('service-records.trooper', ['trooper' => $trooper->id])
-                : route('admin.troopers.profile', ['trooper' => $trooper->id]),
+                : route('admin.troopers.show', ['trooper' => $trooper->id]),
             'costume_id' => $event_trooper->costume_id,
             'costume_options' => $this->options($event_trooper->costume_options ?? []),
             'backup_costume' => $event_trooper->backup_costume?->name,

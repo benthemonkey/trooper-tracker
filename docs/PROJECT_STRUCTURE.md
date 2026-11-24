@@ -144,17 +144,15 @@ app/Http/Controllers/
 ├── Account/               # User account management
 │   ├── Commands/         # Changes something (database, login), whatever the HTTP verb
 │   └── Pages/            # Changes nothing (pages, downloads, JSON, HTMX)
-├── Admin/                 # Administrative interfaces (not yet split into Commands/Pages)
+├── Admin/                 # Command Staff, each area split into Commands/ and Pages/
 ├── Api/Pages/             # Public JSON API
 ├── Auth/                  # Login, logout, registration, OAuth (Commands/, Pages/)
 ├── Events/                # Public event pages and sign-ups (Commands/, Pages/, Concerns/)
 ├── Home/Pages/            # Home page and FAQ
-├── Pickers/Pages/         # Trooper and organization pickers
 ├── Search/Pages/          # Search
 ├── ServiceRecords/Pages/  # Service records, leaderboards, awards
 ├── Shares/Pages/          # Share pages and share images
 ├── Verifications/         # Email verification (Commands/, Pages/)
-├── Widgets/Pages/         # HTMX widgets
 ├── Controller.php         # Base controller
 └── PageController.php     # Base controller with breadcrumbs
 ```
@@ -229,8 +227,8 @@ All enums are backed by strings and located in `app/Enums/`:
 - **AwardFrequency:** How often awards are given
 - **EventStatus:** Event lifecycle states
 - **EventTrooperStatus:** Signup states
-- **MembershipRole:** Trooper roles (member, moderator, administrator)
-- **MembershipStatus:** Account states (pending, active, retired)
+- **MembershipRole:** Trooper roles (member, handler, visitor, event_coordinator, moderator, staff_officer, system_owner)
+- **MembershipStatus:** Account states (none, pending, denied, active, inactive, invalid, reserve, retired, merged, departed)
 - **NoticeType:** Notice severity levels
 - **NotificationFrequency:** Email preferences (never, instant, daily)
 - **OrganizationType:** Organization hierarchy levels
@@ -312,8 +310,7 @@ routes/web/
 ├── admin.php              # Admin panel routes
 ├── auth.php               # Authentication routes
 ├── dashboard.php          # Dashboard routes
-├── events.php             # Event routes
-└── pickers.php            # HTMX picker routes
+└── events.php             # Event routes
 ```
 
 ## Testing Structure
@@ -354,4 +351,4 @@ Key configuration files in `config/`:
 - **Architecture Patterns:** [CODING_CONVENTIONS.md](CODING_CONVENTIONS.md)
 - **Database Schema:** [DATABASE.md](DATABASE.md)
 - **Authentication Flow:** [AUTHENTICATION.md](AUTHENTICATION.md)
-- **Notifications:** [NOTIFICATIONS.md](NOTIFICATIONS.md)
+- **Event lifecycle and notifications:** [EVENT_WORKFLOW.md](EVENT_WORKFLOW.md)

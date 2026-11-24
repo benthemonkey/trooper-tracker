@@ -273,7 +273,7 @@ Moderators can ask for a trooper's permissions to be changed, but only administr
 apply the change.
 
 1. A moderator opens **Command Staff → Request Permissions**
-   (`/admin/troopers/permissions/request`), picks a trooper, and requests any of:
+   (`/admin/troopers/permissions/create`), picks a trooper, and requests any of:
    - make the trooper a MODERATOR of organizations the requester moderates
      (administrators can pick any organization)
    - make the trooper an EVENT_COORDINATOR
@@ -327,7 +327,7 @@ Rules:
 | Approve handler | `app/Messages/Troopers/Commands/Membership/ApproveTrooperMembership.php` |
 | Role change handler | `app/Messages/Troopers/Commands/UpdateTrooperAuthority.php` |
 | Visitor expiry command | `app/Console/Commands/ExpireVisitorAccessCommand.php` |
-| Visitor renewal controller | `app/Http/Controllers/Account/VisitorRenewSubmitController.php` |
+| Visitor renewal controllers | `app/Http/Controllers/Account/Pages/ShowRenewVisitorFormController.php` (form), `app/Http/Controllers/Account/Commands/RenewVisitorMembershipController.php` (submit) |
 | Permission request messages | `app/Messages/Troopers/Commands/Permissions/` |
-| Permission request controllers | `app/Http/Controllers/Admin/Troopers/*Permission*Controller.php` |
+| Permission request controllers | `app/Http/Controllers/Admin/Troopers/{Commands,Pages}/*Permission*Controller.php` |
 | Permission request pages | `resources/svelte/pages/admin/troopers/RequestPermissions.svelte`, `PermissionApprovals.svelte` |

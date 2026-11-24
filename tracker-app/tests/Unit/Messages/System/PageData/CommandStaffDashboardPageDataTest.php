@@ -32,7 +32,7 @@ class CommandStaffDashboardPageDataTest extends TestCase
         $this->assertNotContains('faq', $keys);
         $this->assertNotContains('system-check', $keys);
         $this->assertSame(0, $result['system_check_problems']);
-        $this->assertSame(route('admin.troopers.list'), $result['cards'][3]['url']);
+        $this->assertSame(route('admin.troopers.index'), $result['cards'][3]['url']);
         $fake->assertNotCalled(GetSystemCheckProblems::class);
     }
 
@@ -69,7 +69,10 @@ class CommandStaffDashboardPageDataTest extends TestCase
     {
         $this->actingAs($trooper);
 
-        return (new CommandStaffDashboardPageData($trooper))
+        $data = (new CommandStaffDashboardPageData($trooper))
             ->handle(app(PluginSlots::class), Request::create('/admin'));
+
+        //  as the page receives it, with Resources resolved
+        return json_decode(json_encode($data), true);
     }
 }

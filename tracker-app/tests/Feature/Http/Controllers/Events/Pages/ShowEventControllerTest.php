@@ -20,10 +20,12 @@ use App\Models\TrooperAssignment;
 use App\Models\TrooperCostume;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Tests\Concerns\BuildsTroopsToConfirm;
 use Tests\TestCase;
 
 class ShowEventControllerTest extends TestCase
 {
+    use BuildsTroopsToConfirm;
     use RefreshDatabase;
 
     public function test_invoke_displays_event_details_page(): void
@@ -36,7 +38,8 @@ class ShowEventControllerTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('events/Display')
-            ->where('event.id', $event->id)
+            ->where('event.name', $event->name)
+            ->missing('event.id')
             ->where('event.not_counted_notice', null)
             ->whereNot('event.header.logo_url', null));
     }
@@ -344,6 +347,7 @@ class ShowEventControllerTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->whereNot('shifts.0.going.0.editor.costumes', null)
+            ->where('shifts.0.going.0.editor.requires_costume', true)
             ->where('tour.requires_costume', true));
     }
 
@@ -357,6 +361,8 @@ class ShowEventControllerTest extends TestCase
         //  the tour's "pick your costume" steps drop out with their example row
         $response->assertInertia(fn (Assert $page) => $page
             ->where('shifts.0.going.0.editor.costumes', null)
+            //  so the Edit area says no costume is needed rather than leaving a gap
+            ->where('shifts.0.going.0.editor.requires_costume', false)
             ->where('shifts.0.going.0.costume', null)
             ->where('tour.requires_costume', false));
     }
@@ -621,5 +627,67 @@ class ShowEventControllerTest extends TestCase
             EventOrganization::CAN_ATTEND => $can_attend,
             EventOrganization::TROOPERS_ALLOWED => $troopers_allowed,
         ]);
+    }
+
+    private function moderatorOf(EventTrooper $troop): Trooper
+    {
+        $moderator = Trooper::factory()->asModerator()->withVerifiedEmail()->create();
+        TrooperAssignment::factory()->forTrooper($moderator)
+            ->forOrganization($troop->event_shift->event->organization)->asModerator()->create();
+
+        return $moderator;
+    }
+
+    /**
+     * A roster row's attendance buttons, wherever on the shift the row is listed.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function attendanceOn(EventTrooper $troop, Trooper $viewer): ?array
+    {
+        $response = $this->actingAs($viewer)->get(route('events.display', ['event' => $troop->event_shift->event_id]));
+        $response->assertOk();
+
+        $rows = collect($response->viewData('page')['props']['shifts'][0])
+            ->filter(fn ($value) => is_array($value) && array_is_list($value))
+            ->flatten(1)
+            ->filter(fn ($row) => is_array($row) && isset($row['actions']));
+
+        return $rows->firstWhere('id', $troop->id)['actions']['attendance'];
+    }
+
+    public function test_invoke_offers_made_it_and_missed_it_on_your_row_after_the_troop(): void
+    {
+        $trooper = Trooper::factory()->asActive()->withVerifiedEmail()->create();
+        $troop = $this->troopToConfirm($trooper, EventTrooperStatus::TENTATIVE);
+
+        $this->assertSame(
+            ['url' => route('events.confirm-attendance', ['event_trooper' => $troop->id]), 'answer' => null],
+            $this->attendanceOn($troop, $trooper),
+        );
+    }
+
+    public function test_invoke_keeps_the_answer_on_your_row_so_it_shows_filled(): void
+    {
+        $trooper = Trooper::factory()->asActive()->withVerifiedEmail()->create();
+        $troop = $this->troopToConfirm($trooper, EventTrooperStatus::UNABLE_TO_ATTEND);
+
+        $this->assertSame(EventTrooperStatus::UNABLE_TO_ATTEND->value, $this->attendanceOn($troop, $trooper)['answer']);
+    }
+
+    public function test_invoke_gives_attendance_buttons_to_moderators_but_not_other_members(): void
+    {
+        $troop = $this->troopToConfirm(Trooper::factory()->asActive()->create());
+
+        $this->assertNull($this->attendanceOn($troop, Trooper::factory()->asActive()->withVerifiedEmail()->create()));
+        $this->assertNotNull($this->attendanceOn($troop, $this->moderatorOf($troop)));
+    }
+
+    public function test_invoke_leaves_attendance_alone_after_the_grace_period_or_while_verifying(): void
+    {
+        $trooper = Trooper::factory()->asActive()->withVerifiedEmail()->create();
+
+        $this->assertNull($this->attendanceOn($this->troopToConfirm($trooper, ended_at: now()->subDays(40)), $trooper));
+        $this->assertNull($this->attendanceOn($this->troopToConfirm($trooper, EventTrooperStatus::AWAITING_VERIFICATION), $trooper));
     }
 }

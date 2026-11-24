@@ -5,9 +5,17 @@ declare(strict_types=1);
 namespace App\Messages\Reports\PageData;
 
 use App\Messages\Concerns\DescribesReportFilters;
+use App\Messages\Concerns\ResolvesDonationReportClubs;
+use App\Messages\Reports\Queries\GetDonationEventSummary;
 use App\Messages\Reports\Resources\DonationEventRowResource;
+use App\Messages\Reports\Resources\DonationGrandTotalsResource;
+use App\Messages\Reports\Resources\DonationReportFiltersResource;
+use App\Messages\Reports\Resources\ReportClubOptions;
+use App\Messages\Reports\Resources\ReportSortOptions;
 use App\Models\Organization;
+use App\Models\Trooper;
 use Carbon\Carbon;
+use Hyperdrive\Contracts\Actor;
 use Hyperdrive\Message;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -15,11 +23,14 @@ use Illuminate\Support\Collection;
 /**
  * Data for the Donation Event Summary report: one page of events with what each shift raised.
  *
- * @method static array<string, mixed> call(LengthAwarePaginator $events, Collection $filter_orgs, array $selected_ids, ?Carbon $date_start, ?Carbon $date_end, bool $charity_only, string $sort, string $dir)
+ * @method static array<string, mixed> call(Actor $actor, ?string $date_start = null, ?string $date_end = null, ?string $charity_only = null, array|string|null $organization_ids = null, ?string $sort = null, ?string $dir = null)
  */
 final class DonationEventSummaryPageData extends Message
 {
     use DescribesReportFilters;
+    use ResolvesDonationReportClubs;
+
+    public const PAGE_SIZE = 50;
 
     public const SORTS = [
         'event_start' => 'admin.Date',
@@ -30,19 +41,28 @@ final class DonationEventSummaryPageData extends Message
         'attendees_count' => 'admin.Attendees',
     ];
 
+    /** @var Collection<int, Organization> */
+    private Collection $filter_orgs;
+
+    /** @var array<int, int> */
+    private array $selected_ids = [];
+
+    private ?Carbon $starts = null;
+
+    private ?Carbon $ends = null;
+
     /**
-     * @param  Collection<int, Organization>  $filter_orgs
-     * @param  array<int, int>  $selected_ids
+     * @param  Actor&Trooper  $actor
+     * @param  array<int, mixed>|string|null  $organization_ids
      */
     public function __construct(
-        private readonly LengthAwarePaginator $events,
-        private readonly Collection $filter_orgs,
-        private readonly array $selected_ids,
-        private readonly ?Carbon $date_start,
-        private readonly ?Carbon $date_end,
-        private readonly bool $charity_only,
-        private readonly string $sort,
-        private readonly string $dir,
+        private readonly Actor $actor,
+        private readonly ?string $date_start = null,
+        private readonly ?string $date_end = null,
+        private readonly ?string $charity_only = null,
+        private readonly array|string|null $organization_ids = null,
+        private readonly ?string $sort = null,
+        private readonly ?string $dir = null,
     ) {}
 
     /**
@@ -50,35 +70,66 @@ final class DonationEventSummaryPageData extends Message
      */
     public function handle(): array
     {
-        $events = collect($this->events->items());
+        $this->starts = $this->startOfDay($this->date_start);
+        $this->ends = $this->endOfDay($this->date_end);
+        $clubs = $this->donationClubs($this->actor, (array) $this->organization_ids);
+        $this->filter_orgs = $clubs['filter_orgs'];
+        $this->selected_ids = $clubs['selected_ids'];
+
+        $events = $this->events($clubs['selected_org_ids'], $clubs['accessible_org_ids']);
+        $rows = collect($events->items());
 
         return [
-            'filters' => [
-                'date_start' => $this->date_start?->format('Y-m-d'),
-                'date_end' => $this->date_end?->format('Y-m-d'),
-                'charity_only' => $this->charity_only,
+            'filters' => new DonationReportFiltersResource([
+                'date_start' => $this->starts,
+                'date_end' => $this->ends,
+                'charity_only' => $this->isCharityOnly(),
                 'organization_ids' => $this->selectedOrDefault(),
-                'sort' => $this->sort,
-                'dir' => $this->dir,
-            ],
-            'clubs' => $this->filter_orgs->count() > 1
-                ? $this->filter_orgs
-                    ->map(fn (Organization $organization): array => [
-                        'value' => $organization->id,
-                        'label' => $organization->name,
-                    ])
-                    ->values()
-                    ->all()
-                : [],
-            'sort_options' => collect(self::SORTS)
-                ->map(fn (string $key, string $value): array => ['value' => $value, 'label' => __($key)])
-                ->values()
-                ->all(),
+                'sort' => $this->sortColumn(),
+                'dir' => $this->sortDirection(),
+            ]),
+            //  a single club needs no picker
+            'clubs' => new ReportClubOptions($this->filter_orgs->count() > 1 ? $this->filter_orgs : collect()),
+            'sort_options' => new ReportSortOptions(self::SORTS),
             'caption' => $this->caption(),
             'csv_url' => $this->csvUrl(),
-            'events' => DonationEventRowResource::collection($this->events),
-            'grand_totals' => $events->isEmpty() ? null : DonationEventRowResource::grandTotals($events),
+            'events' => DonationEventRowResource::collection($events),
+            'grand_totals' => $rows->isEmpty() ? null : new DonationGrandTotalsResource($rows),
         ];
+    }
+
+    /**
+     * @param  array<int, int>  $selected_org_ids
+     * @param  array<int, int>  $accessible_org_ids
+     */
+    private function events(array $selected_org_ids, array $accessible_org_ids): LengthAwarePaginator
+    {
+        return GetDonationEventSummary::call(
+            moderator: $this->actor,
+            date_start: $this->starts,
+            date_end: $this->ends,
+            charity_only: $this->isCharityOnly(),
+            page_size: self::PAGE_SIZE,
+            sort: $this->sortColumn(),
+            dir: $this->sortDirection(),
+            selected_org_ids: $selected_org_ids,
+            accessible_org_ids: $accessible_org_ids,
+        );
+    }
+
+    private function isCharityOnly(): bool
+    {
+        return (bool) $this->charity_only;
+    }
+
+    private function sortColumn(): string
+    {
+        return $this->sort ?? 'event_start';
+    }
+
+    private function sortDirection(): string
+    {
+        return $this->dir ?? 'desc';
     }
 
     /**
@@ -95,7 +146,7 @@ final class DonationEventSummaryPageData extends Message
 
     private function caption(): ?string
     {
-        if (!$this->date_start && !$this->date_end && !$this->charity_only && empty($this->selected_ids))
+        if (!$this->starts && !$this->ends && !$this->isCharityOnly() && empty($this->selected_ids))
         {
             return null;
         }
@@ -107,17 +158,17 @@ final class DonationEventSummaryPageData extends Message
             $parts[] = $this->filter_orgs->whereIn('id', $this->selected_ids)->pluck('name')->join(', ');
         }
 
-        if ($this->date_start)
+        if ($this->starts)
         {
-            $parts[] = '— '.__('admin.From :date', ['date' => $this->date_start->localFormat('M d, Y')]);
+            $parts[] = '— '.__('admin.From :date', ['date' => $this->starts->localFormat('M d, Y')]);
         }
 
-        if ($this->date_end)
+        if ($this->ends)
         {
-            $parts[] = __('admin.to :date', ['date' => $this->date_end->localFormat('M d, Y')]);
+            $parts[] = __('admin.to :date', ['date' => $this->ends->localFormat('M d, Y')]);
         }
 
-        if ($this->charity_only)
+        if ($this->isCharityOnly())
         {
             $parts[] = __('admin.— Charity data only');
         }

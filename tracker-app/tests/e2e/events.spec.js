@@ -88,15 +88,29 @@ test.describe('finding a troop', () => {
 });
 
 test.describe('signing up', () => {
-    test("the summary's Sign up opens a collapsed shift", async ({ page }) => {
+    test("the summary's Sign up opens a collapsed shift at its sign-up, ready to go", async ({ page }) => {
         await openEvent(page, seeded.signupEvent);
-        const signUp = shift(page).getByRole('button', { name: 'Sign Up' });
         await collapseShift(page);
-        await expect(signUp).toBeHidden();
+        await expect(shift(page).getByRole('button', { name: 'Sign Up' })).toBeHidden();
 
         await summary(page).getByRole('link', { name: 'Sign up' }).click();
-        await expect(signUp).toBeVisible();
+
+        //  not just the top of the shift: its sign-up choices are open, in view and focused
         await expect(shift(page).locator('.collapse-icon')).toHaveClass(/fa-minus/);
+        const costume = shift(page).locator('.shift-signup-primary--form').getByLabel('Costume', { exact: true });
+        await expect(costume).toBeFocused();
+        await expect(costume).toBeInViewport();
+    });
+
+    test("on a phone, the bar's Sign up goes to the shift's sign-up too", async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await openEvent(page, seeded.signupEvent);
+
+        await page.locator('.my-signup-bar').getByRole('link', { name: 'Sign up' }).click();
+
+        const costume = shift(page).locator('.shift-signup-primary--form').getByLabel('Costume', { exact: true });
+        await expect(costume).toBeFocused();
+        await expect(costume).toBeInViewport();
     });
 
     test('a trooper signs up in a costume, brings a guest and a friend, then cancels', async ({ page }) => {
@@ -173,6 +187,23 @@ test.describe('signing up', () => {
         await response;
         await expect(shift(page).locator('.trooper-status-cancelled')).toContainText(personas.trooper.name);
         await expect(shift(page).locator('.trooper-status-cancelled').getByRole('button', { name: 'Sign up again' })).toBeVisible();
+        await expect(shift(page).getByText('1 of 10 going')).toBeVisible();
+
+        // Signing up again on an event with limits reinstates the sign-up at the back of the
+        // line: going here, since the shift has room.
+        const reinstated = page.waitForResponse((r) => r.url().includes('/events/update/') && r.request().method() === 'POST');
+        await shift(page).locator('.trooper-status-cancelled').getByRole('button', { name: 'Sign up again' }).click();
+        expect((await reinstated).request().postData()).toContain('reinstate');
+        await expect(page.locator('.toast:visible').getByText('Signed up again.').first()).toBeVisible();
+        await expect(shift(page).getByText('2 of 10 going')).toBeVisible();
+        await expect(shift(page).locator('.roster-row--mine')).toContainText('Going');
+
+        // Cancel once more, so the troops after this one find the trooper not going.
+        const cancelledAgain = page.waitForResponse((r) => r.url().includes('/events/update/') && r.request().method() === 'POST');
+        await shift(page).locator('.roster-row--mine').getByRole('button', { name: 'Cancel my sign-up' }).click();
+        await confirmWith(page, 'Cancel my sign-up');
+        await cancelledAgain;
+        await expect(shift(page).locator('.trooper-status-cancelled')).toContainText(personas.trooper.name);
     });
 
     test('a troop with a required brief opens sign-up once it is acknowledged', async ({ page }) => {
@@ -264,13 +295,23 @@ test.describe('around the event page', () => {
 });
 
 test.describe('after the troop', () => {
-    test('a trooper says they made it', async ({ page }) => {
+    test('a trooper says they made it, without leaving the event page', async ({ page }) => {
         await openEvent(page, seeded.pastParade, '/events/closed');
+        const url = page.url();
+        const mine = shift(page).locator('.roster-row--mine');
 
-        await shift(page).getByRole('link', { name: 'Made It' }).click();
+        await mine.getByRole('button', { name: 'Made It' }).click();
+
+        //  the answer fills its button, a toast says so, and the page stays put
+        await expect(mine.getByRole('button', { name: 'Made It' })).toHaveAttribute('aria-pressed', 'true');
+        await expect(mine.getByRole('button', { name: 'Made It' })).toHaveClass(/btn-success/);
+        await expect(mine.getByRole('button', { name: 'Missed It' })).toHaveAttribute('aria-pressed', 'false');
+        await expect(page.locator('.toast').first()).toBeVisible();
+        expect(page.url()).toBe(url);
 
         await openEvent(page, seeded.pastParade, '/events/closed');
-        await expect(shift(page).locator('.roster-row--mine')).toContainText('Attended');
+        await expect(shift(page).locator('.roster-row--mine').getByRole('button', { name: 'Made It' }))
+            .toHaveAttribute('aria-pressed', 'true');
     });
 });
 

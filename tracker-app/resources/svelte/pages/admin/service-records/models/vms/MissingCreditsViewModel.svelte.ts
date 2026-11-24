@@ -13,13 +13,10 @@ export type MissingCreditRow = {
     event_trooper_id: number;
     trooper_id: number;
     trooper_name: string;
-    event_id: number;
     event_name: string;
     shift_label: string;
-    shift_starts_at: string | null;
     costume_name: string | null;
     org_options: OrgOption[];
-    has_eligible_options: boolean;
     has_orphaned_db_value: boolean;
     fallback_org_options: OrgOption[];
     trooper_has_no_club_membership: boolean;
@@ -62,7 +59,7 @@ export class MissingCreditsViewModel extends ViewModel {
     }
 
     get clear_filter_route(): string {
-        return getRoute("admin.service-records.missing-credits");
+        return getRoute("admin.service-records.missing-credits.index");
     }
 
     trooperServiceRecordRoute = (trooper_id: number): string => {
@@ -130,7 +127,7 @@ export class MissingCreditsViewModel extends ViewModel {
 
         this.loading_more = true;
 
-        const url = getRoute("admin.service-records.missing-credits");
+        const url = getRoute("admin.service-records.missing-credits.index");
         const data: Record<string, number> = { offset: this.next_offset };
 
         if (this.filtered_trooper) {

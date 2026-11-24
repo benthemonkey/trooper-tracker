@@ -7,6 +7,8 @@ namespace App\Messages\System\PageData;
 use App\Enums\MembershipStatus;
 use App\Messages\Events\Queries\Verification\GetTroopsAwaitingVerification;
 use App\Messages\System\Queries\GetSystemCheckProblems;
+use App\Messages\System\Resources\DashboardCardResource;
+use App\Messages\System\Resources\DashboardCountsResource;
 use App\Models\Costume;
 use App\Models\EventType;
 use App\Models\PermissionRequest;
@@ -40,11 +42,11 @@ final class CommandStaffDashboardPageData extends Message
 
         return [
             'trooper_id' => $this->actor->id,
-            'counts' => $counts,
+            'counts' => new DashboardCountsResource($counts),
             'system_check_problems' => $this->actor->has_system_owner
                 ? GetSystemCheckProblems::call()->count()
                 : 0,
-            'cards' => $this->cards(),
+            'cards' => DashboardCardResource::collection($this->cards()),
             'plugin_cards' => $slots->render('admin.dashboard.cards', [
                 'request' => $request,
                 'actor' => $this->actor,
@@ -82,7 +84,7 @@ final class CommandStaffDashboardPageData extends Message
     /**
      * The tools the reader can open, in the order the dashboard shows them.
      *
-     * @return array<int, array{key: string, url: string}>
+     * @return array<int, array{key: string, route: string}>
      */
     private function cards(): array
     {
@@ -93,29 +95,29 @@ final class CommandStaffDashboardPageData extends Message
 
         $cards = [
             'trooper-approvals' => ['admin.troopers.approvals.index', true],
-            'costume-approvals' => ['admin.troopers.costume-approvals', true],
-            'troop-verifications' => ['admin.troopers.troop-verifications', true],
-            'troopers' => ['admin.troopers.list', true],
-            'missing-credit' => ['admin.service-records.missing-credits', true],
-            'request-permissions' => ['admin.troopers.permissions.request', true],
-            'permission-approvals' => ['admin.troopers.permissions.approvals', $administrator],
-            'merge-troopers' => ['admin.troopers.merge', $owner],
-            'notices' => ['admin.notices.list', true],
-            'events' => ['admin.events.list', true],
+            'costume-approvals' => ['admin.troopers.costume-approvals.index', true],
+            'troop-verifications' => ['admin.troopers.troop-verifications.index', true],
+            'troopers' => ['admin.troopers.index', true],
+            'missing-credit' => ['admin.service-records.missing-credits.index', true],
+            'request-permissions' => ['admin.troopers.permissions.create', true],
+            'permission-approvals' => ['admin.troopers.permissions.approvals.index', $administrator],
+            'merge-troopers' => ['admin.troopers.merge.create', $owner],
+            'notices' => ['admin.notices.index', true],
+            'events' => ['admin.events.index', true],
             'event-types' => ['admin.event-types.index', $trooper->can('viewAny', EventType::class)],
-            'awards' => ['admin.awards.list', true],
-            'costumes' => ['admin.costumes.list', $trooper->can('create', Costume::class)],
-            'merge-costumes' => ['admin.costumes.merge', $owner],
-            'organizations' => ['admin.organizations.list', true],
-            'reports' => ['admin.reports.display', true],
+            'awards' => ['admin.awards.index', true],
+            'costumes' => ['admin.costumes.index', $trooper->can('create', Costume::class)],
+            'merge-costumes' => ['admin.costumes.merge.create', $owner],
+            'organizations' => ['admin.organizations.index', true],
+            'reports' => ['admin.reports.index', true],
             'faq' => ['admin.faq.index', $administrator],
             'system-check' => ['admin.system-check', $owner],
-            'plugins' => ['admin.plugins.list', $owner],
+            'plugins' => ['admin.plugins.index', $owner],
         ];
 
         return collect($cards)
             ->filter(fn (array $card): bool => $card[1])
-            ->map(fn (array $card, string $key): array => ['key' => $key, 'url' => route($card[0])])
+            ->map(fn (array $card, string $key): array => ['key' => $key, 'route' => $card[0]])
             ->values()
             ->all();
     }

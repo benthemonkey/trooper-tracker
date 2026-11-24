@@ -17,7 +17,7 @@ import type { DisplayShift, TrooperRow } from '../../../../../resources/svelte/p
 const row = (id: number, overrides: Partial<TrooperRow> = {}): TrooperRow => ({
     id,
     number: 1,
-    trooper: { id, name: `TK-${id}`, legal_name: `Trooper ${id}`, url: `/troopers/${id}` },
+    trooper: { name: `TK-${id}`, legal_name: `Trooper ${id}`, url: `/troopers/${id}` },
     is_mine: false,
     needs_verification: false,
     added_by: null,
@@ -53,7 +53,6 @@ const shift = (id: number, overrides: Partial<DisplayShift> = {}): DisplayShift 
     guests: [],
     sign_up: null,
     links: {
-        friend_search_mode: 'friends',
         friend_form_url: `/events/add-trooper-form/${id}`,
         can_add_friend: false,
         can_add_guest: false,
@@ -210,5 +209,27 @@ describe('EventDisplayViewModel', () => {
         expect(vm.takeSignUpRequest(2)).toBe(true);
         expect(vm.takeSignUpRequest(2)).toBe(false);
         expect(vm.sign_up_requested).toBeNull();
+    });
+
+    it("sends the top Sign up to the shift's own Sign up when there is one shift to sign up for", async () => {
+        const vm = new EventDisplayViewModel([shift(1)]);
+
+        const going = vm.goToSignUp([1]);
+
+        expect(vm.isOpen(1)).toBe(true);
+        expect(vm.sign_up_requested).toBe(1);
+        await going;
+        //  nothing on the page took it up here, so it doesn't linger for later
+        expect(vm.sign_up_requested).toBeNull();
+    });
+
+    it('leaves the shift to the trooper when several can be signed up for', async () => {
+        const vm = new EventDisplayViewModel([shift(1), shift(2)]);
+
+        const going = vm.goToSignUp([1, 2]);
+
+        expect(vm.sign_up_requested).toBeNull();
+        await going;
+        expect(vm.isOpen(1) && vm.isOpen(2)).toBe(true);
     });
 });

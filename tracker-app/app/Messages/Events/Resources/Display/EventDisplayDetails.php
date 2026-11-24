@@ -34,7 +34,6 @@ class EventDisplayDetails extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
             'name' => $this->name,
             'header' => $this->header(),
             'organization_name' => $this->organization?->name,
@@ -63,9 +62,9 @@ class EventDisplayDetails extends JsonResource
             'calendar' => $this->calendar(),
             'shares' => $this->shares(),
             'edit_url' => $this->viewer->can('update', $this->resource)
-                ? route('admin.events.update', ['event' => $this->resource]) : null,
+                ? route('admin.events.edit', ['event' => $this->resource]) : null,
             'copy_url' => $this->viewer->can('copy', $this->resource)
-                ? route('admin.events.copy', ['event' => $this->resource]) : null,
+                ? route('admin.events.copy.create', ['event' => $this->resource]) : null,
             'uploads_default_to_instructional' => $this->uploadsDefaultToInstructional(),
         ];
     }

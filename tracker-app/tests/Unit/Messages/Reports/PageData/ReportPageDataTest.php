@@ -42,7 +42,7 @@ class ReportPageDataTest extends TestCase
     public function test_dashboard_sends_formatted_numbers_for_its_window(): void
     {
         $subject = new ReportsDashboardPageData(60);
-        $result = $subject->handle();
+        $result = $this->resolve($subject->handle());
 
         $this->assertSame(60, $result['days']);
         $this->assertSame([30, 60, 90, 180, 360], $result['lookbacks']);
@@ -64,11 +64,11 @@ class ReportPageDataTest extends TestCase
         ]);
         EventTrooper::factory()->forEventShift($shift)->asAttended()->count(2)->create();
 
-        $result = (new EventSummaryPageData($this->moderator))->handle();
+        $result = $this->resolve((new EventSummaryPageData($this->moderator))->handle());
         $row = $result['events'][0];
 
         $this->assertSame('Library Day', $row['name']);
-        $this->assertSame(route('admin.events.update', ['event' => $event]), $row['url']);
+        $this->assertSame(route('admin.events.edit', ['event' => $event]), $row['url']);
         $this->assertSame('1', $row['shifts']);
         $this->assertSame('2', $row['total_trooper_count']);
         $this->assertSame('1,250.50', $row['direct']);
@@ -82,7 +82,7 @@ class ReportPageDataTest extends TestCase
         $shift = EventShift::factory()->forEvent($event)->create();
         EventTrooper::factory()->forEventShift($shift)->asAttended()->create();
 
-        $result = (new EventTypeCountPageData($this->moderator))->handle();
+        $result = $this->resolve((new EventTypeCountPageData($this->moderator))->handle());
         $row = $result['event_types'][0];
 
         $this->assertSame($event->event_type_id, $row['id']);
@@ -94,7 +94,7 @@ class ReportPageDataTest extends TestCase
 
     public function test_event_type_count_shows_dashes_with_nothing_closed(): void
     {
-        $result = (new EventTypeCountPageData($this->moderator))->handle();
+        $result = $this->resolve((new EventTypeCountPageData($this->moderator))->handle());
 
         $this->assertSame([], $result['event_types']);
         $this->assertSame('-', $result['totals']['count']);
@@ -108,11 +108,11 @@ class ReportPageDataTest extends TestCase
             'is_member' => true,
         ]);
 
-        $result = (new TroopersWithoutActivityPageData($this->moderator))->handle();
+        $result = $this->resolve((new TroopersWithoutActivityPageData($this->moderator))->handle());
         $row = collect($result['troopers'])->firstWhere('id', $trooper->id);
 
         $this->assertSame('Never', $row['last_seen']);
-        $this->assertSame(route('admin.troopers.profile', ['trooper' => $trooper]), $row['profile_url']);
+        $this->assertSame(route('admin.troopers.show', ['trooper' => $trooper]), $row['profile_url']);
     }
 
     public function test_status_change_log_names_who_marked_the_troop(): void
@@ -135,13 +135,21 @@ class ReportPageDataTest extends TestCase
             ->state([ModelChange::TROOPER_ID => $this->moderator->id])
             ->create();
 
-        $result = (new StatusChangeLogPageData($this->moderator))->handle();
+        $result = $this->resolve((new StatusChangeLogPageData($this->moderator))->handle());
         $row = $result['changes'][0];
 
         $this->assertSame('Library Day', $row['event_name']);
         $this->assertSame($trooper->display_name, $row['trooper_name']);
         $this->assertSame($this->moderator->display_name, $row['updated_by']);
         $this->assertStringContainsString('tab=changes', $row['trooper_url']);
+    }
+
+    /**
+     * The payload as the page receives it, with Resources resolved.
+     */
+    private function resolve(array $data): array
+    {
+        return json_decode(json_encode($data), true);
     }
 
     private function closedEvent(string $name): Event
