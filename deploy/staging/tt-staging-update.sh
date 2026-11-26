@@ -159,6 +159,8 @@ main()
     # here: the refresh's A/B database switch relies on .env and env vars being read live.
     "$PHP" artisan route:cache --no-interaction
     "$PHP" artisan queue:restart --no-interaction
+    # What /status reports
+    "$PHP" artisan tracker:stamp-deployment "$(git -C "$REPO_DIR" rev-parse HEAD)" --no-interaction
 
     if [ "$refresh" = 1 ]
     then
